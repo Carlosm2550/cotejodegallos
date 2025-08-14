@@ -99,7 +99,7 @@
       }
     </style>
     <!-- El "link" a index.css puede o no ser necesario dependiendo de la configuración de Vite, pero no hace daño -->
-    <link rel="stylesheet" href="/index.css">
+    <link rel="stylesheet" href="./index.css">
   <script type="importmap">
 {
   "imports": {
@@ -112,10 +112,12 @@
   }
 }
 </script>
+<link rel="stylesheet" href="/index.css">
 </head>
   <body>
     <div id="root"></div>
     <!-- Vite inyectará aquí automáticamente tu JavaScript compilado. -->
-    <script type="module" src="/index.tsx"></script>
-  </body>
+    <script type="module" src="./index.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
+</body>
 </html>
