@@ -5,8 +5,16 @@
 
 
 
+
+
+
+
+
+
+
+
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { Screen, Cuerda, Gallo, Pelea, Torneo, PesoUnit, Notification, MatchmakingResults } from './types';
+import { Screen, Cuerda, Gallo, Pelea, Torneo, PesoUnit, Notification, MatchmakingResults, TipoGallo, TipoEdad } from './types';
 import { TrophyIcon, PlayIcon } from './components/Icons';
 import Toaster from './components/Toaster';
 
@@ -32,76 +40,98 @@ const findMaximumPairsGreedy = (
     torneo: Torneo,
     cuerdas: Cuerda[]
 ): { fights: Pelea[], leftovers: Gallo[] } => {
-    const fights: Pelea[] = [];
-    let availableRoosters = new Set(roostersToMatch);
 
-    const sortedRoosters = [...roostersToMatch].sort((a, b) => {
-        const weightA = convertToGrams(a.weight, a.weightUnit);
-        const weightB = convertToGrams(b.weight, b.weightUnit);
-        if (weightA !== weightB) return weightA - weightB;
-        return (a.ageMonths || 0) - (b.ageMonths || 0);
-    });
+    // Internal function to perform matching on a given set of roosters and rules
+    const performMatchingForGroup = (
+        groupRoosters: Gallo[],
+        groupTorneo: Torneo
+    ): { fights: Pelea[], leftovers: Gallo[] } => {
+        const fights: Pelea[] = [];
+        let availableRoosters = new Set(groupRoosters);
 
-    for (const roosterA of sortedRoosters) {
-        if (!availableRoosters.has(roosterA)) continue;
+        const sortedRoosters = [...groupRoosters].sort((a, b) => {
+            const weightA = convertToGrams(a.weight, a.weightUnit);
+            const weightB = convertToGrams(b.weight, b.weightUnit);
+            if (weightA !== weightB) return weightA - weightB;
+            return a.ageMonths - b.ageMonths;
+        });
 
-        let bestPartner: Gallo | null = null;
-        let bestScore = Infinity;
+        for (const roosterA of sortedRoosters) {
+            if (!availableRoosters.has(roosterA)) continue;
 
-        for (const roosterB of availableRoosters) {
-            if (roosterA.id === roosterB.id) continue;
-            
-            const cuerdaA = cuerdas.find(c => c.id === roosterA.cuerdaId);
-            const cuerdaB = cuerdas.find(c => c.id === roosterB.cuerdaId);
-            
-            // --- CRITICAL RULE: "The Golden Rule" ---
-            // Determine the base team ID for each rooster. 
-            // If it's a "front", use its baseCuerdaId. If not, use its own ID.
-            const baseIdA = cuerdaA?.baseCuerdaId || cuerdaA?.id;
-            const baseIdB = cuerdaB?.baseCuerdaId || cuerdaB?.id;
+            let bestPartner: Gallo | null = null;
+            let bestScore = Infinity;
 
-            // Roosters from the same base team (owner) can NEVER fight each other,
-            // regardless of which "front" they belong to.
-            // This also prevents roosters from the same exact front/cuerda from fighting.
-            if (baseIdA && baseIdB && baseIdA === baseIdB) continue;
+            for (const roosterB of availableRoosters) {
+                if (roosterA.id === roosterB.id) continue;
 
-            // Check rules: exceptions are also checked using the base team ID.
-            // An exception against a base team applies to all its fronts.
-            const areExceptions = torneo.exceptions.some(pair =>
-                (pair.includes(baseIdA) && pair.includes(baseIdB))
-            );
-            if (areExceptions) continue;
+                if (roosterA.tipoGallo !== roosterB.tipoGallo) continue;
+                if (roosterA.tipoEdad !== roosterB.tipoEdad) continue; // Should be impossible if groups are separated, but safe
 
-            const weightA = convertToGrams(roosterA.weight, roosterA.weightUnit);
-            const weightB = convertToGrams(roosterB.weight, roosterB.weightUnit);
-            const weightDiff = Math.abs(weightA - weightB);
-            const ageDiff = Math.abs((roosterA.ageMonths || 1) - (roosterB.ageMonths || 1));
+                const cuerdaA = cuerdas.find(c => c.id === roosterA.cuerdaId);
+                const cuerdaB = cuerdas.find(c => c.id === roosterB.cuerdaId);
+                
+                const baseIdA = cuerdaA?.baseCuerdaId || cuerdaA?.id;
+                const baseIdB = cuerdaB?.baseCuerdaId || cuerdaB?.id;
 
-            if (weightDiff <= torneo.weightTolerance && ageDiff <= (torneo.ageToleranceMonths || 0)) {
-                const score = weightDiff + (ageDiff * 100);
-                if (score < bestScore) {
-                    bestScore = score;
-                    bestPartner = roosterB;
+                if (baseIdA && baseIdB && baseIdA === baseIdB) continue;
+
+                const areExceptions = groupTorneo.exceptions.some(pair =>
+                    (pair.includes(baseIdA) && pair.includes(baseIdB))
+                );
+                if (areExceptions) continue;
+
+                const weightA = convertToGrams(roosterA.weight, roosterA.weightUnit);
+                const weightB = convertToGrams(roosterB.weight, roosterB.weightUnit);
+                const weightDiff = Math.abs(weightA - weightB);
+                const ageDiff = Math.abs(roosterA.ageMonths - roosterB.ageMonths);
+                
+                // Use the age tolerance from the specific tournament config for the group
+                if (weightDiff <= groupTorneo.weightTolerance && ageDiff <= groupTorneo.ageToleranceMonths) {
+                    const score = weightDiff + (ageDiff * 100);
+                    if (score < bestScore) {
+                        bestScore = score;
+                        bestPartner = roosterB;
+                    }
                 }
+            }
+
+            if (bestPartner) {
+                fights.push({
+                    id: `fight-${Date.now()}-${Math.random()}`,
+                    fightNumber: 0,
+                    roosterA: roosterA,
+                    roosterB: bestPartner,
+                    winner: null,
+                    duration: null,
+                });
+                availableRoosters.delete(roosterA);
+                availableRoosters.delete(bestPartner);
             }
         }
 
-        if (bestPartner) {
-            fights.push({
-                id: `fight-${Date.now()}-${Math.random()}`,
-                fightNumber: 0,
-                roosterA: roosterA,
-                roosterB: bestPartner,
-                winner: null,
-                duration: null,
-            });
-            availableRoosters.delete(roosterA);
-            availableRoosters.delete(bestPartner);
-        }
-    }
+        return { fights, leftovers: Array.from(availableRoosters) };
+    };
 
-    const leftovers = Array.from(availableRoosters);
-    return { fights, leftovers };
+    // 1. Separate roosters into Pollos and Gallos
+    const pollos = roostersToMatch.filter(r => r.tipoEdad === TipoEdad.POLLO);
+    const gallos = roostersToMatch.filter(r => r.tipoEdad === TipoEdad.GALLO);
+
+    // 2. Create a specific config for Gallos where age tolerance is ignored
+    const torneoForGallos: Torneo = {
+        ...torneo,
+        ageToleranceMonths: 999, // Effectively infinite tolerance for Gallos
+    };
+
+    // 3. Run matching for each group
+    const { fights: polloFights, leftovers: polloLeftovers } = performMatchingForGroup(pollos, torneo); // Use original torneo for pollos
+    const { fights: galloFights, leftovers: galloLeftovers } = performMatchingForGroup(gallos, torneoForGallos); // Use modified for gallos
+    
+    // 4. Combine results
+    const allFights = [...polloFights, ...galloFights];
+    const allLeftovers = [...polloLeftovers, ...galloLeftovers];
+
+    return { fights: allFights, leftovers: allLeftovers };
 };
 
 
@@ -135,7 +165,9 @@ const App: React.FC = () => {
     weightTolerance: 50,
     ageToleranceMonths: 2,
     exceptions: [],
-    weightUnit: PesoUnit.GRAMS,
+    weightUnit: PesoUnit.POUNDS,
+    minWeight: convertToGrams(2.15, PesoUnit.POUNDS), // 2.15 lbs in grams
+    maxWeight: convertToGrams(4.5, PesoUnit.POUNDS), // 4.5 lbs in grams
     rondas: { enabled: true, pointsForWin: 3, pointsForDraw: 1 },
     roostersPerTeam: 2,
   });
@@ -161,8 +193,10 @@ const App: React.FC = () => {
         const newGallos: Gallo[] = [];
         const baseCuerdaMap = new Map<string, { id: string, owner: string }>();
 
-        DEMO_GALLERAS.forEach(data => {
-            const isFrontMatch = data.cuerdaName.match(/^(.*)\s\((\d+)\)$/);
+        DEMO_GALLERAS.forEach((data: any) => {
+            const cuerdaName = data["Nombre de la cuerda"];
+            const owner = data["Dueño"];
+            const isFrontMatch = cuerdaName.match(/^(.*)\s\((\d+)\)$/);
             let newCuerda: Cuerda;
             const cuerdaId = `cuerda-${Date.now()}-${Math.random()}`;
 
@@ -171,16 +205,16 @@ const App: React.FC = () => {
                 const baseCuerdaInfo = baseCuerdaMap.get(baseName);
                 
                 if (!baseCuerdaInfo) {
-                    console.error(`Cuerda base '${baseName}' no encontrada para el frente '${data.cuerdaName}'. Asegúrate de que las cuerdas base aparezcan antes que sus frentes en los datos.`);
+                    console.error(`Cuerda base '${baseName}' no encontrada para el frente '${cuerdaName}'. Asegúrate de que las cuerdas base aparezcan antes que sus frentes en los datos.`);
                     newCuerda = {
                         id: cuerdaId,
-                        name: data.cuerdaName,
-                        owner: data.owner,
+                        name: cuerdaName,
+                        owner: owner,
                     };
                 } else {
                     newCuerda = {
                         id: cuerdaId,
-                        name: data.cuerdaName,
+                        name: cuerdaName,
                         owner: baseCuerdaInfo.owner,
                         baseCuerdaId: baseCuerdaInfo.id,
                     };
@@ -188,24 +222,29 @@ const App: React.FC = () => {
             } else {
                 newCuerda = {
                     id: cuerdaId,
-                    name: data.cuerdaName,
-                    owner: data.owner,
+                    name: cuerdaName,
+                    owner: owner,
                 };
-                baseCuerdaMap.set(data.cuerdaName, { id: newCuerda.id, owner: newCuerda.owner });
+                baseCuerdaMap.set(cuerdaName, { id: newCuerda.id, owner: newCuerda.owner });
             }
 
             newCuerdas.push(newCuerda);
 
-            data.gallos.forEach(galloData => {
+            data.Gallos.forEach((galloData: any) => {
+                 const tipoEdad = galloData["clase"] === 'pollo' ? TipoEdad.POLLO : TipoEdad.GALLO;
+
                 newGallos.push({
                     id: `gallo-${Date.now()}-${Math.random()}`,
-                    ringId: galloData.ringId,
-                    color: galloData.color,
+                    ringId: galloData["ID del Anillo"],
+                    color: galloData["Color del Gallo"],
                     cuerdaId: newCuerda.id,
-                    weight: galloData.weight,
-                    weightUnit: PesoUnit.GRAMS,
-                    ageMonths: galloData.ageMonths,
-                    markingId: galloData.markingId,
+                    weight: galloData["Peso (lb)"],
+                    weightUnit: PesoUnit.POUNDS,
+                    ageMonths: galloData["meses de edad"],
+                    markingId: galloData["ID de Marcaje"],
+                    tipoGallo: galloData["tipo de gallo"] === 'pava' ? TipoGallo.PAVA : TipoGallo.LISO,
+                    tipoEdad,
+                    marca: galloData["Marca"],
                 });
             });
         });
@@ -309,9 +348,15 @@ const App: React.FC = () => {
       showNotification('Cuerda y sus gallos eliminados.', 'success');
   };
 
-  const handleSaveGallo = (galloData: Omit<Gallo, 'id'>, currentGalloId: string | null) => {
+  const handleSaveGallo = (galloData: Omit<Gallo, 'id' | 'tipoEdad'>, currentGalloId: string | null) => {
+    
+    // Derive tipoEdad from ageMonths
+    const tipoEdad = galloData.ageMonths < 12 ? TipoEdad.POLLO : TipoEdad.GALLO;
+    const finalGalloData = { ...galloData, tipoEdad };
+    
     if (currentGalloId) {
-        setGallos(prev => prev.map(g => g.id === currentGalloId ? { ...g, ...galloData, id: g.id } : g));
+        const updatedGallos = gallos.map(g => g.id === currentGalloId ? { ...finalGalloData, id: g.id } : g);
+        setGallos(updatedGallos);
         
         // Also update matchmakingResults if it exists
         if (matchmakingResults) {
@@ -321,7 +366,7 @@ const App: React.FC = () => {
                     ...prev,
                     unpairedRoosters: prev.unpairedRoosters.map(g => {
                         if (g.id === currentGalloId) {
-                            return { ...g, ...galloData, id: g.id };
+                            return { ...finalGalloData, id: g.id };
                         }
                         return g;
                     })
@@ -331,7 +376,7 @@ const App: React.FC = () => {
         
         showNotification('Gallo actualizado.', 'success');
     } else {
-        const newGallo = { ...galloData, id: `gallo-${Date.now()}-${Math.random()}` };
+        const newGallo = { ...finalGalloData, id: `gallo-${Date.now()}-${Math.random()}` };
         setGallos(prev => [...prev, newGallo]);
         showNotification('Gallo añadido.', 'success');
     }
@@ -355,36 +400,48 @@ const App: React.FC = () => {
     
         setTimeout(() => {
             try {
+                // Pre-filter roosters that are outside the allowed weight range.
+                // These will go directly to the leftovers list.
+                const roostersWithinWeight = gallos.filter(g => {
+                    const weightInGrams = convertToGrams(g.weight, g.weightUnit);
+                    return weightInGrams >= torneo.minWeight && weightInGrams <= torneo.maxWeight;
+                });
+                const roostersOutsideWeight = gallos.filter(g => !roostersWithinWeight.includes(g));
+
+                if (roostersOutsideWeight.length > 0) {
+                    const names = roostersOutsideWeight.map(r => r.color).join(', ');
+                    showNotification(`Gallos con peso fuera de rango enviados a sobrantes: ${names}`, 'info');
+                }
+
                 let mainFights: Pelea[] = [];
-                let initialUnpairedRoosters: Gallo[] = [];
+                let initialUnpairedRoosters: Gallo[] = [...roostersOutsideWeight];
                 let contribution = 0;
                 let mainTournamentRoostersCount = 0;
     
                 if (torneo.rondas.enabled) {
                     const roosterCountPerTeam = torneo.roostersPerTeam;
-                    const cuerdasConGallos = cuerdas.filter(p => gallos.some(g => g.cuerdaId === p.id));
                     
-                    const compliantCuerdas = cuerdasConGallos.filter(c => {
-                        const count = gallos.filter(g => g.cuerdaId === c.id).length;
+                    const compliantCuerdas = cuerdas.filter(c => {
+                        const count = roostersWithinWeight.filter(g => g.cuerdaId === c.id).length;
                         return count === roosterCountPerTeam;
                     });
 
-                    const nonCompliantCuerdas = cuerdasConGallos.filter(c => !compliantCuerdas.includes(c));
+                    const nonCompliantCuerdas = cuerdas.filter(c => roostersWithinWeight.some(g => g.cuerdaId === c.id) && !compliantCuerdas.includes(c));
 
                     if (nonCompliantCuerdas.length > 0) {
                         const teamNames = nonCompliantCuerdas.map(c => c.name).join(', ');
-                        showNotification(`Equipos no aptos para rondas (no tienen ${roosterCountPerTeam} gallos): ${teamNames}. Pasan a sobrantes.`, 'info');
+                        showNotification(`Equipos no aptos para rondas (no tienen ${roosterCountPerTeam} gallos con peso válido): ${teamNames}. Pasan a sobrantes.`, 'info');
                     }
 
                     if (compliantCuerdas.length < 2) {
-                        showNotification("Se necesitan al menos 2 equipos (cuerdas o frentes) con la cantidad exacta de gallos para el torneo por rondas.", 'error');
+                        showNotification("Se necesitan al menos 2 equipos con la cantidad exacta de gallos y peso válido para el torneo por rondas.", 'error');
                         setIsMatchmaking(false);
                         return;
                     }
 
                     contribution = roosterCountPerTeam;
 
-                    const teamRoostersForMatching = gallos.filter(g => 
+                    const teamRoostersForMatching = roostersWithinWeight.filter(g => 
                         compliantCuerdas.some(c => c.id === g.cuerdaId)
                     );
                     mainTournamentRoostersCount = teamRoostersForMatching.length;
@@ -392,13 +449,13 @@ const App: React.FC = () => {
                     const { fights, leftovers: unpairedFromTeamRound } = findMaximumPairsGreedy(teamRoostersForMatching, torneo, cuerdas);
                     mainFights = fights;
     
-                    const roostersOutsideTeamSelection = gallos.filter(g => !compliantCuerdas.some(c => c.id === g.cuerdaId));
-                    initialUnpairedRoosters = [...unpairedFromTeamRound, ...roostersOutsideTeamSelection];
+                    const roostersOutsideTeamSelection = roostersWithinWeight.filter(g => !compliantCuerdas.some(c => c.id === g.cuerdaId));
+                    initialUnpairedRoosters = [...initialUnpairedRoosters, ...unpairedFromTeamRound, ...roostersOutsideTeamSelection];
 
                 } else {
-                    const { fights, leftovers } = findMaximumPairsGreedy(gallos, torneo, cuerdas);
+                    const { fights, leftovers } = findMaximumPairsGreedy(roostersWithinWeight, torneo, cuerdas);
                     mainFights = fights;
-                    initialUnpairedRoosters = leftovers;
+                    initialUnpairedRoosters = [...initialUnpairedRoosters, ...leftovers];
                     mainTournamentRoostersCount = mainFights.length * 2;
                 }
     
@@ -579,7 +636,9 @@ const App: React.FC = () => {
     <>
       <Header />
       <main className="container mx-auto px-4 py-8">
-        {children}
+        <div className="print-target">
+            {children}
+        </div>
       </main>
       <Footer />
     </>

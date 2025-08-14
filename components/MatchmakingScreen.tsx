@@ -1,10 +1,13 @@
 
 
 
+
+
+
 import React, { useState } from 'react';
 import { MatchmakingResults, Torneo, Cuerda, Pelea, Gallo, PesoUnit, Notification } from '../types';
 import EditLeftoverGalloModal from './ConflictModal';
-import { PencilIcon } from './Icons';
+import { PencilIcon, WarningIcon } from './Icons';
 
 // --- UTILITY FUNCTIONS ---
 const getWeightUnitAbbr = (unit: PesoUnit): string => {
@@ -54,7 +57,7 @@ interface MatchmakingScreenProps {
     onStartTournament: () => void;
     onBack: () => void;
     onCreateManualFight: (roosterAId: string, roosterBId: string) => void;
-    onSaveGallo: (galloData: Omit<Gallo, 'id'>, currentGalloId: string | null) => void;
+    onSaveGallo: (galloData: Omit<Gallo, 'id' | 'tipoEdad' | 'marca'>, currentGalloId: string | null) => void;
     onDeleteCuerda: (cuerdaId: string) => void;
     showNotification: (message: string, type: Notification['type']) => void;
 }
@@ -91,7 +94,7 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
         setEditModalOpen(true);
     };
 
-    const handleSaveGalloClick = (galloData: Omit<Gallo, 'id'>, currentGalloId: string) => {
+    const handleSaveGalloClick = (galloData: Omit<Gallo, 'id' | 'tipoEdad' | 'marca'>, currentGalloId: string) => {
         onSaveGallo(galloData, currentGalloId);
     };
 
@@ -101,7 +104,9 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
 
 
     const handlePrint = () => {
+        document.body.classList.add('printing-cartelera');
         window.print();
+        document.body.classList.remove('printing-cartelera');
     };
 
     const renderPelea = (pelea: Pelea, index: number) => (
@@ -110,14 +115,14 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
             <div className="w-5/12 text-right pr-2">
                 <p className="font-bold text-white">{pelea.roosterA.color}</p>
                 <p className="text-xs text-gray-400">{getCuerdaName(pelea.roosterA.cuerdaId)}</p>
-                <p className="text-xs font-mono">{formatWeight(pelea.roosterA, torneo.weightUnit)} / {pelea.roosterA.ageMonths || 'N/A'}m</p>
+                 <p className="text-xs font-mono">{formatWeight(pelea.roosterA, torneo.weightUnit)} / {pelea.roosterA.ageMonths || 'N/A'}m / {pelea.roosterA.tipoGallo}</p>
                 <p className="text-xs text-gray-500 font-mono">A:{pelea.roosterA.ringId} M:{pelea.roosterA.markingId}</p>
             </div>
             <div className="w-1/12 text-center text-red-500 font-extrabold">VS</div>
             <div className="w-5/12 text-left pl-2">
                 <p className="font-bold text-white">{pelea.roosterB.color}</p>
                 <p className="text-xs text-gray-400">{getCuerdaName(pelea.roosterB.cuerdaId)}</p>
-                <p className="text-xs font-mono">{formatWeight(pelea.roosterB, torneo.weightUnit)} / {pelea.roosterB.ageMonths || 'N/A'}m</p>
+                 <p className="text-xs font-mono">{formatWeight(pelea.roosterB, torneo.weightUnit)} / {pelea.roosterB.ageMonths || 'N/A'}m / {pelea.roosterB.tipoGallo}</p>
                 <p className="text-xs text-gray-500 font-mono">A:{pelea.roosterB.ringId} M:{pelea.roosterB.markingId}</p>
             </div>
         </div>
@@ -126,13 +131,13 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
     const totalRoostersForIndividualRound = results.unpairedRoosters.length + (results.individualFights.length * 2);
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 print-target">
             <div className="text-center">
                 <h2 className="text-3xl font-bold text-white">Cartelera de Peleas</h2>
-                <p className="text-gray-400 mt-2 print-hide">Este es el resultado del cotejo. Revisa las peleas y comienza el torneo.</p>
+                <p className="text-gray-400 mt-2">Este es el resultado del cotejo. Revisa las peleas y comienza el torneo.</p>
             </div>
             
-            <div className="bg-gray-800/50 rounded-2xl shadow-lg border border-gray-700 p-4 print-hide">
+            <div className="bg-gray-800/50 rounded-2xl shadow-lg border border-gray-700 p-4">
                 <h3 className="text-xl font-bold text-amber-400 mb-3">Estadísticas del Cotejo</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 text-center">
                     {torneo.rondas.enabled && (
@@ -174,11 +179,11 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
             </div>
 
             {totalRoostersForIndividualRound > 0 && (
-                <div className="bg-gray-800/50 rounded-2xl shadow-lg border border-gray-700 p-4 mt-8 print-hide">
+                <div className="bg-gray-800/50 rounded-2xl shadow-lg border border-gray-700 p-4 mt-8">
                     <h3 className="text-xl font-bold text-amber-400 mb-4">Cotejo Manual de Sobrantes</h3>
                     
                     {results.individualFights.length > 0 && (
-                        <div className="space-y-2 mb-6">
+                        <div className="space-y-2 mb-6 printable-card">
                             <h4 className="text-amber-400 mb-2 text-base">Peleas Individuales Creadas:</h4>
                             {results.individualFights.map((pelea, index) => renderPelea(pelea, results.mainFights.length + index))}
                         </div>
@@ -195,9 +200,14 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
 
                                     if (selectedRoosters.length >= 2 && !isSelected) {
                                         isDisabled = true;
-                                    } else if (selectedGallo && selectedGallo.cuerdaId === gallo.cuerdaId && !isSelected) {
+                                    } else if (selectedGallo && (selectedGallo.cuerdaId === gallo.cuerdaId || selectedGallo.tipoGallo !== gallo.tipoGallo || selectedGallo.tipoEdad !== gallo.tipoEdad) && !isSelected) {
                                         isDisabled = true;
                                     }
+                                    
+                                    const weightInGrams = convertToGrams(gallo.weight, gallo.weightUnit);
+                                    const isUnderWeight = weightInGrams < torneo.minWeight;
+                                    const isOverWeight = weightInGrams > torneo.maxWeight;
+
 
                                     return (
                                         <div 
@@ -215,11 +225,13 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
                                             <div className="ml-3 flex-grow overflow-hidden">
                                                 <p className="font-bold text-white truncate">{gallo.color} <span className="text-xs text-gray-400 font-normal">({gallo.ringId})</span></p>
                                                 <p className="text-sm text-gray-300 truncate">{getCuerdaName(gallo.cuerdaId)}</p>
+                                                {isUnderWeight && <span className="text-xs font-bold text-yellow-400 block">Peso Bajo</span>}
+                                                {isOverWeight && <span className="text-xs font-bold text-red-400 block">Peso Alto</span>}
                                             </div>
                                             <div className="text-right flex-shrink-0 ml-2 flex items-center">
                                                 <div>
                                                     <p className="font-mono text-sm">{formatWeight(gallo, torneo.weightUnit)}</p>
-                                                    <p className="font-mono text-xs text-gray-400">{gallo.ageMonths}m</p>
+                                                    <p className="font-mono text-xs text-gray-400">{gallo.ageMonths}m / {gallo.tipoGallo}</p>
                                                 </div>
                                                 <button
                                                     onClick={(e) => {
@@ -258,7 +270,7 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
             )}
 
 
-            <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 pt-4 print-hide">
+            <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 pt-4">
                 <button onClick={onBack} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-6 rounded-lg w-full sm:w-auto">Volver a Configuración</button>
                 <button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg w-full sm:w-auto">Imprimir PDF</button>
                 <button onClick={onStartTournament} disabled={results.mainFights.length === 0 && results.individualFights.length === 0} className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg w-full sm:w-auto disabled:bg-gray-500 disabled:cursor-not-allowed">

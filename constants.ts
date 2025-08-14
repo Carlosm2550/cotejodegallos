@@ -1,267 +1,861 @@
 
 export const DEMO_GALLERAS = [
   {
-    "cuerdaName": "El Triunfo",
-    "owner": "Juan Pérez",
-    "gallos": [
-      { "ringId": "1234", "color": "Giro", "weight": 2850, "ageMonths": 12, "markingId": "54321" },
-      { "ringId": "5678", "color": "Colorado", "weight": 3100, "ageMonths": 11, "markingId": "87654" }
+    "Nombre de la cuerda": "El Triunfo",
+    "Dueño": "Juan Pérez",
+    "Gallos": [
+      {
+        "ID del Anillo": "1234",
+        "Color del Gallo": "Giro",
+        "Peso (lb)": 3.85,
+        "meses de edad": 12,
+        "ID de Marcaje": "54321",
+        "tipo de gallo": "Liso",
+        "clase": "gallo",
+        "Marca": 12
+      },
+      {
+        "ID del Anillo": "5678",
+        "Color del Gallo": "Colorado",
+        "Peso (lb)": 4.21,
+        "meses de edad": 11,
+        "ID de Marcaje": "87654",
+        "tipo de gallo": "Liso",
+        "clase": "pollo",
+        "Marca": 7
+      }
     ]
   },
   {
-    "cuerdaName": "La Herradura",
-    "owner": "Carlos Sánchez",
-    "gallos": [
-      { "ringId": "9876", "color": "Cenizo", "weight": 2950, "ageMonths": 10, "markingId": "12378" },
-      { "ringId": "5432", "color": "Jabonero", "weight": 3300, "ageMonths": 14, "markingId": "98712" }
+    "Nombre de la cuerda": "La Herradura",
+    "Dueño": "Carlos Sánchez",
+    "Gallos": [
+      {
+        "ID del Anillo": "9876",
+        "Color del Gallo": "Cenizo",
+        "Peso (lb)": 2.55,
+        "meses de edad": 10,
+        "ID de Marcaje": "12378",
+        "tipo de gallo": "pava",
+        "clase": "pollo",
+        "Marca": 4
+      },
+      {
+        "ID del Anillo": "5432",
+        "Color del Gallo": "Jabonero",
+        "Peso (lb)": 3.99,
+        "meses de edad": 14,
+        "ID de Marcaje": "98712",
+        "tipo de gallo": "pava",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "Los Valientes",
-    "owner": "Miguel Gómez",
-    "gallos": [
-      { "ringId": "2468", "color": "Negro", "weight": 2600, "ageMonths": 9, "markingId": "13579" },
-      { "ringId": "1357", "color": "Blanco", "weight": 3450, "ageMonths": 13, "markingId": "24680" }
+    "Nombre de la cuerda": "Los Valientes",
+    "Dueño": "Miguel Gómez",
+    "Gallos": [
+      {
+        "ID del Anillo": "2468",
+        "Color del Gallo": "Negro",
+        "Peso (lb)": 2.24,
+        "meses de edad": 9,
+        "ID de Marcaje": "13579",
+        "tipo de gallo": "Liso",
+        "clase": "pollo",
+        "Marca": 9
+      },
+      {
+        "ID del Anillo": "1357",
+        "Color del Gallo": "Blanco",
+        "Peso (lb)": 4.48,
+        "meses de edad": 13,
+        "ID de Marcaje": "24680",
+        "tipo de gallo": "Liso",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "Agua Zarca",
-    "owner": "Luis Hernández",
-    "gallos": [
-      { "ringId": "8888", "color": "Giro Negro", "weight": 3200, "ageMonths": 12, "markingId": "44444" },
-      { "ringId": "7777", "color": "Colorado Retinto", "weight": 2750, "ageMonths": 10, "markingId": "55555" }
+    "Nombre de la cuerda": "Agua Zarca",
+    "Dueño": "Luis Hernández",
+    "Gallos": [
+      {
+        "ID del Anillo": "8888",
+        "Color del Gallo": "Giro Negro",
+        "Peso (lb)": 3.75,
+        "meses de edad": 12,
+        "ID de Marcaje": "44444",
+        "tipo de gallo": "pava",
+        "clase": "gallo",
+        "Marca": 12
+      },
+      {
+        "ID del Anillo": "7777",
+        "Color del Gallo": "Colorado Retinto",
+        "Peso (lb)": 2.89,
+        "meses de edad": 10,
+        "ID de Marcaje": "55555",
+        "tipo de gallo": "pava",
+        "clase": "pollo",
+        "Marca": 2
+      }
     ]
   },
   {
-    "cuerdaName": "Rancho Alegre",
-    "owner": "Jorge Torres",
-    "gallos": [
-      { "ringId": "1122", "color": "Bullego", "weight": 3050, "ageMonths": 11, "markingId": "33445" },
-      { "ringId": "6677", "color": "Canelo", "weight": 2900, "ageMonths": 12, "markingId": "88990" }
+    "Nombre de la cuerda": "Rancho Alegre",
+    "Dueño": "Jorge Torres",
+    "Gallos": [
+      {
+        "ID del Anillo": "1122",
+        "Color del Gallo": "Bullego",
+        "Peso (lb)": 3.15,
+        "meses de edad": 11,
+        "ID de Marcaje": "33445",
+        "tipo de gallo": "Liso",
+        "clase": "pollo",
+        "Marca": 11
+      },
+      {
+        "ID del Anillo": "6677",
+        "Color del Gallo": "Canelo",
+        "Peso (lb)": 2.67,
+        "meses de edad": 12,
+        "ID de Marcaje": "88990",
+        "tipo de gallo": "Liso",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "La Escondida",
-    "owner": "Ricardo Flores",
-    "gallos": [
-      { "ringId": "3141", "color": "Pinto", "weight": 2880, "ageMonths": 14, "markingId": "59265" },
-      { "ringId": "2718", "color": "Melado", "weight": 3150, "ageMonths": 9, "markingId": "28182" }
+    "Nombre de la cuerda": "La Escondida",
+    "Dueño": "Ricardo Flores",
+    "Gallos": [
+      {
+        "ID del Anillo": "3141",
+        "Color del Gallo": "Pinto",
+        "Peso (lb)": 3.46,
+        "meses de edad": 14,
+        "ID de Marcaje": "59265",
+        "tipo de gallo": "pava",
+        "clase": "gallo",
+        "Marca": 12
+      },
+      {
+        "ID del Anillo": "2718",
+        "Color del Gallo": "Melado",
+        "Peso (lb)": 2.33,
+        "meses de edad": 9,
+        "ID de Marcaje": "28182",
+        "tipo de gallo": "pava",
+        "clase": "pollo",
+        "Marca": 5
+      }
     ]
   },
   {
-    "cuerdaName": "El Destino",
-    "owner": "Fernando Castillo",
-    "gallos": [
-      { "ringId": "1618", "color": "Giro Blanco", "weight": 3350, "ageMonths": 13, "markingId": "03399" },
-      { "ringId": "0577", "color": "Zambo", "weight": 2550, "ageMonths": 10, "markingId": "21588" }
+    "Nombre de la cuerda": "El Destino",
+    "Dueño": "Fernando Castillo",
+    "Gallos": [
+      {
+        "ID del Anillo": "1618",
+        "Color del Gallo": "Giro Blanco",
+        "Peso (lb)": 4.31,
+        "meses de edad": 13,
+        "ID de Marcaje": "03399",
+        "tipo de gallo": "Liso",
+        "clase": "gallo",
+        "Marca": 12
+      },
+      {
+        "ID del Anillo": "0577",
+        "Color del Gallo": "Zambo",
+        "Peso (lb)": 2.18,
+        "meses de edad": 10,
+        "ID de Marcaje": "21588",
+        "tipo de gallo": "Liso",
+        "clase": "pollo",
+        "Marca": 1
+      }
     ]
   },
   {
-    "cuerdaName": "La Ponderosa",
-    "owner": "Arturo Vargas",
-    "gallos": [
-      { "ringId": "1984", "color": "Giro", "weight": 3000, "ageMonths": 11, "markingId": "20231" },
-      { "ringId": "1991", "color": "Colorado", "weight": 3250, "ageMonths": 12, "markingId": "19955" }
+    "Nombre de la cuerda": "La Ponderosa",
+    "Dueño": "Arturo Vargas",
+    "Gallos": [
+      {
+        "ID del Anillo": "1984",
+        "Color del Gallo": "Giro",
+        "Peso (lb)": 3.01,
+        "meses de edad": 11,
+        "ID de Marcaje": "20231",
+        "tipo de gallo": "pava",
+        "clase": "pollo",
+        "Marca": 8
+      },
+      {
+        "ID del Anillo": "1991",
+        "Color del Gallo": "Colorado",
+        "Peso (lb)": 3.92,
+        "meses de edad": 12,
+        "ID de Marcaje": "19955",
+        "tipo de gallo": "pava",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "El Diamante",
-    "owner": "Raúl Jiménez",
-    "gallos": [
-      { "ringId": "4040", "color": "Cenizo", "weight": 2650, "ageMonths": 9, "markingId": "80808" },
-      { "ringId": "5050", "color": "Jabonero", "weight": 3400, "ageMonths": 14, "markingId": "90909" }
+    "Nombre de la cuerda": "El Diamante",
+    "Dueño": "Raúl Jiménez",
+    "Gallos": [
+      {
+        "ID del Anillo": "4040",
+        "Color del Gallo": "Cenizo",
+        "Peso (lb)": 2.45,
+        "meses de edad": 9,
+        "ID de Marcaje": "80808",
+        "tipo de gallo": "Liso",
+        "clase": "pollo",
+        "Marca": 6
+      },
+      {
+        "ID del Anillo": "5050",
+        "Color del Gallo": "Jabonero",
+        "Peso (lb)": 4.18,
+        "meses de edad": 14,
+        "ID de Marcaje": "90909",
+        "tipo de gallo": "Liso",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "Los Galleros",
-    "owner": "Héctor Ríos",
-    "gallos": [
-      { "ringId": "2323", "color": "Negro", "weight": 2800, "ageMonths": 10, "markingId": "45454" },
-      { "ringId": "7878", "color": "Blanco", "weight": 3180, "ageMonths": 11, "markingId": "67676" }
+    "Nombre de la cuerda": "Los Galleros",
+    "Dueño": "Héctor Ríos",
+    "Gallos": [
+      {
+        "ID del Anillo": "2323",
+        "Color del Gallo": "Negro",
+        "Peso (lb)": 2.76,
+        "meses de edad": 10,
+        "ID de Marcaje": "45454",
+        "tipo de gallo": "pava",
+        "clase": "pollo",
+        "Marca": 3
+      },
+      {
+        "ID del Anillo": "7878",
+        "Color del Gallo": "Blanco",
+        "Peso (lb)": 3.66,
+        "meses de edad": 11,
+        "ID de Marcaje": "67676",
+        "tipo de gallo": "pava",
+        "clase": "pollo",
+        "Marca": 10
+      }
     ]
   },
   {
-    "cuerdaName": "El Retoño",
-    "owner": "David Mendoza",
-    "gallos": [
-      { "ringId": "1001", "color": "Giro Negro", "weight": 3220, "ageMonths": 12, "markingId": "20022" },
-      { "ringId": "3003", "color": "Colorado Retinto", "weight": 2980, "ageMonths": 13, "markingId": "40044" }
+    "Nombre de la cuerda": "El Retoño",
+    "Dueño": "David Mendoza",
+    "Gallos": [
+      {
+        "ID del Anillo": "1001",
+        "Color del Gallo": "Giro Negro",
+        "Peso (lb)": 4.02,
+        "meses de edad": 12,
+        "ID de Marcaje": "20022",
+        "tipo de gallo": "Liso",
+        "clase": "gallo",
+        "Marca": 12
+      },
+      {
+        "ID del Anillo": "3003",
+        "Color del Gallo": "Colorado Retinto",
+        "Peso (lb)": 3.22,
+        "meses de edad": 13,
+        "ID de Marcaje": "40044",
+        "tipo de gallo": "Liso",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "La Finca",
-    "owner": "Óscar Navarro",
-    "gallos": [
-      { "ringId": "4567", "color": "Bullego", "weight": 2780, "ageMonths": 9, "markingId": "89012" },
-      { "ringId": "9012", "color": "Canelo", "weight": 3330, "ageMonths": 14, "markingId": "34567" }
+    "Nombre de la cuerda": "La Finca",
+    "Dueño": "Óscar Navarro",
+    "Gallos": [
+      {
+        "ID del Anillo": "4567",
+        "Color del Gallo": "Bullego",
+        "Peso (lb)": 2.93,
+        "meses de edad": 9,
+        "ID de Marcaje": "89012",
+        "tipo de gallo": "pava",
+        "clase": "pollo",
+        "Marca": 5
+      },
+      {
+        "ID del Anillo": "9012",
+        "Color del Gallo": "Canelo",
+        "Peso (lb)": 4.25,
+        "meses de edad": 14,
+        "ID de Marcaje": "34567",
+        "tipo de gallo": "pava",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "El Capricho",
-    "owner": "Pedro Guerrero",
-    "gallos": [
-      { "ringId": "1110", "color": "Pinto", "weight": 2580, "ageMonths": 10, "markingId": "22200" },
-      { "ringId": "9998", "color": "Melado", "weight": 3480, "ageMonths": 13, "markingId": "77766" }
+    "Nombre de la cuerda": "El Capricho",
+    "Dueño": "Pedro Guerrero",
+    "Gallos": [
+      {
+        "ID del Anillo": "1110",
+        "Color del Gallo": "Pinto",
+        "Peso (lb)": 2.21,
+        "meses de edad": 10,
+        "ID de Marcaje": "22200",
+        "tipo de gallo": "Liso",
+        "clase": "pollo",
+        "Marca": 1
+      },
+      {
+        "ID del Anillo": "9998",
+        "Color del Gallo": "Melado",
+        "Peso (lb)": 4.49,
+        "meses de edad": 13,
+        "ID de Marcaje": "77766",
+        "tipo de gallo": "Liso",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "Las Palmas",
-    "owner": "Javier Delgado",
-    "gallos": [
-      { "ringId": "6543", "color": "Giro Blanco", "weight": 3120, "ageMonths": 11, "markingId": "21098" },
-      { "ringId": "8765", "color": "Zambo", "weight": 2820, "ageMonths": 12, "markingId": "43210" }
+    "Nombre de la cuerda": "Las Palmas",
+    "Dueño": "Javier Delgado",
+    "Gallos": [
+      {
+        "ID del Anillo": "6543",
+        "Color del Gallo": "Giro Blanco",
+        "Peso (lb)": 3.33,
+        "meses de edad": 11,
+        "ID de Marcaje": "21098",
+        "tipo de gallo": "pava",
+        "clase": "pollo",
+        "Marca": 7
+      },
+      {
+        "ID del Anillo": "8765",
+        "Color del Gallo": "Zambo",
+        "Peso (lb)": 2.84,
+        "meses de edad": 12,
+        "ID de Marcaje": "43210",
+        "tipo de gallo": "pava",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "El Centenario",
-    "owner": "Francisco Peña",
-    "gallos": [
-      { "ringId": "1776", "color": "Giro", "weight": 2920, "ageMonths": 9, "markingId": "18810" },
-      { "ringId": "1910", "color": "Colorado", "weight": 3280, "ageMonths": 14, "markingId": "19177" }
+    "Nombre de la cuerda": "El Centenario",
+    "Dueño": "Francisco Peña",
+    "Gallos": [
+      {
+        "ID del Anillo": "1776",
+        "Color del Gallo": "Giro",
+        "Peso (lb)": 3.11,
+        "meses de edad": 9,
+        "ID de Marcaje": "18810",
+        "tipo de gallo": "pava",
+        "clase": "pollo",
+        "Marca": 4
+      },
+      {
+        "ID del Anillo": "1910",
+        "Color del Gallo": "Colorado",
+        "Peso (lb)": 4.11,
+        "meses de edad": 14,
+        "ID de Marcaje": "19177",
+        "tipo de gallo": "pava",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "La Gloria",
-    "owner": "Daniel Luna",
-    "gallos": [
-      { "ringId": "2020", "color": "Cenizo", "weight": 2720, "ageMonths": 10, "markingId": "21212" },
-      { "ringId": "2222", "color": "Jabonero", "weight": 3380, "ageMonths": 12, "markingId": "33333" }
+    "Nombre de la cuerda": "La Gloria",
+    "Dueño": "Daniel Luna",
+    "Gallos": [
+      {
+        "ID del Anillo": "2020",
+        "Color del Gallo": "Cenizo",
+        "Peso (lb)": 2.68,
+        "meses de edad": 10,
+        "ID de Marcaje": "21212",
+        "tipo de gallo": "Liso",
+        "clase": "pollo",
+        "Marca": 9
+      },
+      {
+        "ID del Anillo": "2222",
+        "Color del Gallo": "Jabonero",
+        "Peso (lb)": 4.38,
+        "meses de edad": 12,
+        "ID de Marcaje": "33333",
+        "tipo de gallo": "Liso",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "El Huracán",
-    "owner": "Mario Ríos",
-    "gallos": [
-      { "ringId": "9119", "color": "Negro", "weight": 3080, "ageMonths": 11, "markingId": "82288" },
-      { "ringId": "7447", "color": "Blanco", "weight": 2880, "ageMonths": 13, "markingId": "65566" }
+    "Nombre de la cuerda": "El Huracán",
+    "Dueño": "Mario Ríos",
+    "Gallos": [
+      {
+        "ID del Anillo": "9119",
+        "Color del Gallo": "Negro",
+        "Peso (lb)": 3.55,
+        "meses de edad": 11,
+        "ID de Marcaje": "82288",
+        "tipo de gallo": "pava",
+        "clase": "pollo",
+        "Marca": 2
+      },
+      {
+        "ID del Anillo": "7447",
+        "Color del Gallo": "Blanco",
+        "Peso (lb)": 2.99,
+        "meses de edad": 13,
+        "ID de Marcaje": "65566",
+        "tipo de gallo": "pava",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "El Relámpago",
-    "owner": "Roberto Soto",
-    "gallos": [
-      { "ringId": "1212", "color": "Giro Negro", "weight": 3150, "ageMonths": 9, "markingId": "34343" },
-      { "ringId": "1313", "color": "Colorado Retinto", "weight": 2950, "ageMonths": 14, "markingId": "56565" }
+    "Nombre de la cuerda": "El Relámpago",
+    "Dueño": "Roberto Soto",
+    "Gallos": [
+      {
+        "ID del Anillo": "1212",
+        "Color del Gallo": "Giro Negro",
+        "Peso (lb)": 3.96,
+        "meses de edad": 9,
+        "ID de Marcaje": "34343",
+        "tipo de gallo": "Liso",
+        "clase": "pollo",
+        "Marca": 6
+      },
+      {
+        "ID del Anillo": "1313",
+        "Color del Gallo": "Colorado Retinto",
+        "Peso (lb)": 3.06,
+        "meses de edad": 14,
+        "ID de Marcaje": "56565",
+        "tipo de gallo": "Liso",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "Pura Sangre",
-    "owner": "Samuel Vega",
-    "gallos": [
-      { "ringId": "1492", "color": "Bullego", "weight": 2680, "ageMonths": 10, "markingId": "15213" },
-      { "ringId": "1810", "color": "Canelo", "weight": 3420, "ageMonths": 12, "markingId": "18214" }
+    "Nombre de la cuerda": "Pura Sangre",
+    "Dueño": "Samuel Vega",
+    "Gallos": [
+      {
+        "ID del Anillo": "1492",
+        "Color del Gallo": "Bullego",
+        "Peso (lb)": 2.51,
+        "meses de edad": 10,
+        "ID de Marcaje": "15213",
+        "tipo de gallo": "pava",
+        "clase": "pollo",
+        "Marca": 11
+      },
+      {
+        "ID del Anillo": "1810",
+        "Color del Gallo": "Canelo",
+        "Peso (lb)": 4.41,
+        "meses de edad": 12,
+        "ID de Marcaje": "18214",
+        "tipo de gallo": "pava",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "Los Compadres",
-    "owner": "Gabriel Romero",
-    "gallos": [
-      { "ringId": "8585", "color": "Pinto", "weight": 2830, "ageMonths": 11, "markingId": "96969" },
-      { "ringId": "8686", "color": "Melado", "weight": 3130, "ageMonths": 13, "markingId": "97979" }
+    "Nombre de la cuerda": "Los Compadres",
+    "Dueño": "Gabriel Romero",
+    "Gallos": [
+      {
+        "ID del Anillo": "8585",
+        "Color del Gallo": "Pinto",
+        "Peso (lb)": 2.87,
+        "meses de edad": 11,
+        "ID de Marcaje": "96969",
+        "tipo de gallo": "Liso",
+        "clase": "pollo",
+        "Marca": 5
+      },
+      {
+        "ID del Anillo": "8686",
+        "Color del Gallo": "Melado",
+        "Peso (lb)": 3.79,
+        "meses de edad": 13,
+        "ID de Marcaje": "97979",
+        "tipo de gallo": "Liso",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "El Amigo",
-    "owner": "Andrés Morales",
-    "gallos": [
-      { "ringId": "3535", "color": "Giro Blanco", "weight": 3230, "ageMonths": 9, "markingId": "46464" },
-      { "ringId": "3636", "color": "Zambo", "weight": 2930, "ageMonths": 14, "markingId": "57575" }
+    "Nombre de la cuerda": "El Amigo",
+    "Dueño": "Andrés Morales",
+    "Gallos": [
+      {
+        "ID del Anillo": "3535",
+        "Color del Gallo": "Giro Blanco",
+        "Peso (lb)": 4.15,
+        "meses de edad": 9,
+        "ID de Marcaje": "46464",
+        "tipo de gallo": "pava",
+        "clase": "pollo",
+        "Marca": 1
+      },
+      {
+        "ID del Anillo": "3636",
+        "Color del Gallo": "Zambo",
+        "Peso (lb)": 3.19,
+        "meses de edad": 14,
+        "ID de Marcaje": "57575",
+        "tipo de gallo": "pava",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "La Esperanza",
-    "owner": "Eduardo Castillo",
-    "gallos": [
-      { "ringId": "7070", "color": "Giro", "weight": 2730, "ageMonths": 10, "markingId": "81818" },
-      { "ringId": "7171", "color": "Colorado", "weight": 3370, "ageMonths": 12, "markingId": "92929" }
+    "Nombre de la cuerda": "La Esperanza",
+    "Dueño": "Eduardo Castillo",
+    "Gallos": [
+      {
+        "ID del Anillo": "7070",
+        "Color del Gallo": "Giro",
+        "Peso (lb)": 2.72,
+        "meses de edad": 10,
+        "ID de Marcaje": "81818",
+        "tipo de gallo": "Liso",
+        "clase": "pollo",
+        "Marca": 8
+      },
+      {
+        "ID del Anillo": "7171",
+        "Color del Gallo": "Colorado",
+        "Peso (lb)": 4.29,
+        "meses de edad": 12,
+        "ID de Marcaje": "92929",
+        "tipo de gallo": "Liso",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "El Tesoro",
-    "owner": "Alfredo Ponce",
-    "gallos": [
-      { "ringId": "4848", "color": "Cenizo", "weight": 3030, "ageMonths": 11, "markingId": "59595" },
-      { "ringId": "4949", "color": "Jabonero", "weight": 2870, "ageMonths": 13, "markingId": "60606" }
+    "Nombre de la cuerda": "El Tesoro",
+    "Dueño": "Alfredo Ponce",
+    "Gallos": [
+      {
+        "ID del Anillo": "4848",
+        "Color del Gallo": "Cenizo",
+        "Peso (lb)": 3.48,
+        "meses de edad": 11,
+        "ID de Marcaje": "59595",
+        "tipo de gallo": "pava",
+        "clase": "pollo",
+        "Marca": 3
+      },
+      {
+        "ID del Anillo": "4949",
+        "Color del Gallo": "Jabonero",
+        "Peso (lb)": 2.91,
+        "meses de edad": 13,
+        "ID de Marcaje": "60606",
+        "tipo de gallo": "pava",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "Hermanos Soler",
-    "owner": "Felipe Soler",
-    "gallos": [
-      { "ringId": "2929", "color": "Negro", "weight": 3170, "ageMonths": 9, "markingId": "30303" },
-      { "ringId": "8383", "color": "Blanco", "weight": 2970, "ageMonths": 14, "markingId": "94949" }
+    "Nombre de la cuerda": "Hermanos Soler",
+    "Dueño": "Felipe Soler",
+    "Gallos": [
+      {
+        "ID del Anillo": "2929",
+        "Color del Gallo": "Negro",
+        "Peso (lb)": 3.88,
+        "meses de edad": 9,
+        "ID de Marcaje": "30303",
+        "tipo de gallo": "Liso",
+        "clase": "pollo",
+        "Marca": 10
+      },
+      {
+        "ID del Anillo": "8383",
+        "Color del Gallo": "Blanco",
+        "Peso (lb)": 3.28,
+        "meses de edad": 14,
+        "ID de Marcaje": "94949",
+        "tipo de gallo": "Liso",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "El Imperio",
-    "owner": "César Ríos",
-    "gallos": [
-      { "ringId": "6161", "color": "Giro Negro", "weight": 2670, "ageMonths": 10, "markingId": "72727" },
-      { "ringId": "6262", "color": "Colorado Retinto", "weight": 3470, "ageMonths": 12, "markingId": "83838" }
+    "Nombre de la cuerda": "El Imperio",
+    "Dueño": "César Ríos",
+    "Gallos": [
+      {
+        "ID del Anillo": "6161",
+        "Color del Gallo": "Giro Negro",
+        "Peso (lb)": 2.58,
+        "meses de edad": 10,
+        "ID de Marcaje": "72727",
+        "tipo de gallo": "pava",
+        "clase": "pollo",
+        "Marca": 6
+      },
+      {
+        "ID del Anillo": "6262",
+        "Color del Gallo": "Colorado Retinto",
+        "Peso (lb)": 4.45,
+        "meses de edad": 12,
+        "ID de Marcaje": "83838",
+        "tipo de gallo": "pava",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "El Triunfo (2)",
-    "owner": "Juan Pérez",
-    "gallos": [
-      { "ringId": "1111", "color": "Canelo", "weight": 3020, "ageMonths": 10, "markingId": "22222" },
-      { "ringId": "2233", "color": "Pinto", "weight": 3180, "ageMonths": 13, "markingId": "44556" }
+    "Nombre de la cuerda": "El Triunfo (2)",
+    "Dueño": "Juan Pérez",
+    "Gallos": [
+      {
+        "ID del Anillo": "1111",
+        "Color del Gallo": "Canelo",
+        "Peso (lb)": 3.41,
+        "meses de edad": 10,
+        "ID de Marcaje": "22222",
+        "tipo de gallo": "Liso",
+        "clase": "pollo",
+        "Marca": 2
+      },
+      {
+        "ID del Anillo": "2233",
+        "Color del Gallo": "Pinto",
+        "Peso (lb)": 3.82,
+        "meses de edad": 13,
+        "ID de Marcaje": "44556",
+        "tipo de gallo": "Liso",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "Los Valientes (2)",
-    "owner": "Miguel Gómez",
-    "gallos": [
-      { "ringId": "3333", "color": "Giro Blanco", "weight": 2770, "ageMonths": 11, "markingId": "66666" },
-      { "ringId": "4444", "color": "Zambo", "weight": 3320, "ageMonths": 12, "markingId": "77777" }
+    "Nombre de la cuerda": "Los Valientes (2)",
+    "Dueño": "Miguel Gómez",
+    "Gallos": [
+      {
+        "ID del Anillo": "3333",
+        "Color del Gallo": "Giro Blanco",
+        "Peso (lb)": 2.78,
+        "meses de edad": 11,
+        "ID de Marcaje": "66666",
+        "tipo de gallo": "pava",
+        "clase": "pollo",
+        "Marca": 7
+      },
+      {
+        "ID del Anillo": "4444",
+        "Color del Gallo": "Zambo",
+        "Peso (lb)": 4.19,
+        "meses de edad": 12,
+        "ID de Marcaje": "77777",
+        "tipo de gallo": "pava",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "Rancho Alegre (2)",
-    "owner": "Jorge Torres",
-    "gallos": [
-      { "ringId": "5555", "color": "Giro", "weight": 2940, "ageMonths": 9, "markingId": "88888" },
-      { "ringId": "6666", "color": "Colorado", "weight": 3240, "ageMonths": 14, "markingId": "99999" }
+    "Nombre de la cuerda": "Rancho Alegre (2)",
+    "Dueño": "Jorge Torres",
+    "Gallos": [
+      {
+        "ID del Anillo": "5555",
+        "Color del Gallo": "Giro",
+        "Peso (lb)": 3.24,
+        "meses de edad": 9,
+        "ID de Marcaje": "88888",
+        "tipo de gallo": "Liso",
+        "clase": "pollo",
+        "Marca": 4
+      },
+      {
+        "ID del Anillo": "6666",
+        "Color del Gallo": "Colorado",
+        "Peso (lb)": 4.08,
+        "meses de edad": 14,
+        "ID de Marcaje": "99999",
+        "tipo de gallo": "Liso",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "El Destino (2)",
-    "owner": "Fernando Castillo",
-    "gallos": [
-      { "ringId": "7788", "color": "Cenizo", "weight": 2640, "ageMonths": 10, "markingId": "11223" },
-      { "ringId": "9900", "color": "Jabonero", "weight": 3440, "ageMonths": 13, "markingId": "33445" }
+    "Nombre de la cuerda": "El Destino (2)",
+    "Dueño": "Fernando Castillo",
+    "Gallos": [
+      {
+        "ID del Anillo": "7788",
+        "Color del Gallo": "Cenizo",
+        "Peso (lb)": 2.49,
+        "meses de edad": 10,
+        "ID de Marcaje": "11223",
+        "tipo de gallo": "pava",
+        "clase": "pollo",
+        "Marca": 9
+      },
+      {
+        "ID del Anillo": "9900",
+        "Color del Gallo": "Jabonero",
+        "Peso (lb)": 4.35,
+        "meses de edad": 13,
+        "ID de Marcaje": "33445",
+        "tipo de gallo": "pava",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "El Diamante (2)",
-    "owner": "Raúl Jiménez",
-    "gallos": [
-      { "ringId": "1515", "color": "Negro", "weight": 2840, "ageMonths": 12, "markingId": "26262" },
-      { "ringId": "1616", "color": "Blanco", "weight": 3140, "ageMonths": 11, "markingId": "27272" }
+    "Nombre de la cuerda": "El Diamante (2)",
+    "Dueño": "Raúl Jiménez",
+    "Gallos": [
+      {
+        "ID del Anillo": "1515",
+        "Color del Gallo": "Negro",
+        "Peso (lb)": 2.85,
+        "meses de edad": 12,
+        "ID de Marcaje": "26262",
+        "tipo de gallo": "Liso",
+        "clase": "gallo",
+        "Marca": 12
+      },
+      {
+        "ID del Anillo": "1616",
+        "Color del Gallo": "Blanco",
+        "Peso (lb)": 3.69,
+        "meses de edad": 11,
+        "ID de Marcaje": "27272",
+        "tipo de gallo": "Liso",
+        "clase": "pollo",
+        "Marca": 1
+      }
     ]
   },
   {
-    "cuerdaName": "La Finca (2)",
-    "owner": "Óscar Navarro",
-    "gallos": [
-      { "ringId": "1717", "color": "Giro Negro", "weight": 3290, "ageMonths": 9, "markingId": "28282" },
-      { "ringId": "1818", "color": "Colorado Retinto", "weight": 2990, "ageMonths": 14, "markingId": "29292" }
+    "Nombre de la cuerda": "La Finca (2)",
+    "Dueño": "Óscar Navarro",
+    "Gallos": [
+      {
+        "ID del Anillo": "1717",
+        "Color del Gallo": "Giro Negro",
+        "Peso (lb)": 4.04,
+        "meses de edad": 9,
+        "ID de Marcaje": "28282",
+        "tipo de gallo": "pava",
+        "clase": "pollo",
+        "Marca": 11
+      },
+      {
+        "ID del Anillo": "1818",
+        "Color del Gallo": "Colorado Retinto",
+        "Peso (lb)": 3.36,
+        "meses de edad": 14,
+        "ID de Marcaje": "29292",
+        "tipo de gallo": "pava",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "El Centenario (2)",
-    "owner": "Francisco Peña",
-    "gallos": [
-      { "ringId": "1919", "color": "Bullego", "weight": 2590, "ageMonths": 10, "markingId": "30303" },
-      { "ringId": "2021", "color": "Canelo", "weight": 3490, "ageMonths": 13, "markingId": "31313" }
+    "Nombre de la cuerda": "El Centenario (2)",
+    "Dueño": "Francisco Peña",
+    "Gallos": [
+      {
+        "ID del Anillo": "1919",
+        "Color del Gallo": "Bullego",
+        "Peso (lb)": 2.39,
+        "meses de edad": 10,
+        "ID de Marcaje": "30303",
+        "tipo de gallo": "Liso",
+        "clase": "pollo",
+        "Marca": 8
+      },
+      {
+        "ID del Anillo": "2021",
+        "Color del Gallo": "Canelo",
+        "Peso (lb)": 4.44,
+        "meses de edad": 13,
+        "ID de Marcaje": "31313",
+        "tipo de gallo": "Liso",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   },
   {
-    "cuerdaName": "Pura Sangre (2)",
-    "owner": "Samuel Vega",
-    "gallos": [
-      { "ringId": "2223", "color": "Pinto", "weight": 2890, "ageMonths": 11, "markingId": "32323" },
-      { "ringId": "2324", "color": "Melado", "weight": 3190, "ageMonths": 12, "markingId": "33334" }
+    "Nombre de la cuerda": "Pura Sangre (2)",
+    "Dueño": "Samuel Vega",
+    "Gallos": [
+      {
+        "ID del Anillo": "2223",
+        "Color del Gallo": "Pinto",
+        "Peso (lb)": 3.09,
+        "meses de edad": 11,
+        "ID de Marcaje": "32323",
+        "tipo de gallo": "pava",
+        "clase": "pollo",
+        "Marca": 5
+      },
+      {
+        "ID del Anillo": "2324",
+        "Color del Gallo": "Melado",
+        "Peso (lb)": 3.94,
+        "meses de edad": 12,
+        "ID de Marcaje": "33334",
+        "tipo de gallo": "pava",
+        "clase": "gallo",
+        "Marca": 12
+      }
     ]
   }
 ];

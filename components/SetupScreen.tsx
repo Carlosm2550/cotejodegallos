@@ -2,9 +2,16 @@
 
 
 
+
+
+
+
+
+
+
 import React, { useState, useMemo, useEffect } from 'react';
-import { Cuerda, Gallo, Torneo, Notification, PesoUnit } from '../types';
-import { SettingsIcon, RoosterIcon, UsersIcon, PlusIcon, TrashIcon, PencilIcon, XIcon, PlayIcon } from './Icons';
+import { Cuerda, Gallo, Torneo, Notification, PesoUnit, TipoGallo, TipoEdad } from '../types';
+import { SettingsIcon, RoosterIcon, UsersIcon, PlusIcon, TrashIcon, PencilIcon, XIcon, PlayIcon, WarningIcon } from './Icons';
 import Modal from './Modal';
 
 // --- UTILITY FUNCTIONS ---
@@ -23,6 +30,15 @@ const convertToGrams = (weight: number, unit: PesoUnit): number => {
         case PesoUnit.OUNCES: return weight * 28.3495;
         case PesoUnit.GRAMS:
         default: return weight;
+    }
+};
+
+const convertFromGrams = (grams: number, unit: PesoUnit): number => {
+    switch (unit) {
+        case PesoUnit.POUNDS: return grams / 453.592;
+        case PesoUnit.OUNCES: return grams / 28.3495;
+        case PesoUnit.GRAMS:
+        default: return grams;
     }
 };
 
@@ -257,24 +273,57 @@ const CuerdaFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: 
         </Modal>
     );
 }
-const GalloFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (gallo: Omit<Gallo, 'id'>) => void; gallo: Gallo | null; cuerdas: Cuerda[]; globalWeightUnit: PesoUnit; showNotification: (message: string, type: Notification['type']) => void; }> = ({ isOpen, onClose, onSave, gallo, cuerdas, globalWeightUnit, showNotification }) => {
+const GalloFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (gallo: Omit<Gallo, 'id' | 'tipoEdad'>) => void; gallo: Gallo | null; cuerdas: Cuerda[]; globalWeightUnit: PesoUnit; showNotification: (message: string, type: Notification['type']) => void; }> = ({ isOpen, onClose, onSave, gallo, cuerdas, globalWeightUnit, showNotification }) => {
     const [ringId, setRingId] = useState('');
     const [color, setColor] = useState('');
     const [cuerdaId, setCuerdaId] = useState('');
     const [weight, setWeight] = useState(0);
     const [ageMonths, setAgeMonths] = useState(1);
     const [markingId, setMarkingId] = useState('');
+    const [tipoGallo, setTipoGallo] = useState<TipoGallo>(TipoGallo.LISO);
+    const [marca, setMarca] = useState<string>('');
+    
+    const { isGallo, tipoEdad } = useMemo(() => {
+        const isGalloDetected = ageMonths >= 12;
+        return {
+            isGallo: isGalloDetected,
+            tipoEdad: isGalloDetected ? TipoEdad.GALLO : TipoEdad.POLLO,
+        };
+    }, [ageMonths]);
+
 
     useEffect(() => {
         if (isOpen) {
+            const initialAge = gallo?.ageMonths || 1;
+            const initialIsGallo = initialAge >= 12;
+
             setRingId(gallo?.ringId || '');
             setColor(gallo?.color || '');
             setCuerdaId(gallo?.cuerdaId || cuerdas[0]?.id || '');
             setWeight(gallo?.weight || 0);
-            setAgeMonths(gallo?.ageMonths || 1);
+            setAgeMonths(initialAge);
             setMarkingId(gallo?.markingId || '');
+            setTipoGallo(gallo?.tipoGallo || TipoGallo.LISO);
+
+            if (gallo) {
+                setMarca(gallo.marca.toString());
+            } else {
+                setMarca(initialIsGallo ? '12' : '');
+            }
         }
     }, [isOpen, gallo, cuerdas]);
+    
+    const handleAgeChange = (newAge: number) => {
+        setAgeMonths(newAge);
+        if (newAge >= 12) {
+            setMarca('12');
+        } else {
+            // If it was a gallo (age >= 12) and now it's a pollo, clear the marca for manual input
+            if (ageMonths >= 12) {
+                setMarca('');
+            }
+        }
+    }
     
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -282,7 +331,15 @@ const GalloFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
             showNotification("Por favor, seleccione una cuerda.", 'error');
             return;
         }
-        onSave({ ringId, color, cuerdaId, weight, weightUnit: globalWeightUnit, ageMonths, markingId });
+
+        const finalMarca = isGallo ? 12 : parseInt(marca, 10);
+        if (!isGallo && (marca.trim() === '' || isNaN(finalMarca))) {
+            showNotification("La Marca es obligatoria y debe ser un número para los pollos.", 'error');
+            return;
+        }
+
+        onSave({ ringId, color, cuerdaId, weight, weightUnit: globalWeightUnit, ageMonths, markingId, tipoGallo, marca: finalMarca });
+        onClose();
     };
 
     return (
@@ -292,19 +349,40 @@ const GalloFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
                     <InputField label="ID del Anillo" value={ringId} onChange={e => setRingId(e.target.value)} required />
                     <InputField label="Color del Gallo" value={color} onChange={e => setColor(e.target.value)} required />
                 </div>
-                <div>
+                 <div>
                     <label className="block text-sm font-medium text-gray-400 mb-1">Cuerda</label>
                     <select value={cuerdaId} onChange={e => setCuerdaId(e.target.value)} required className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition">
                         <option value="" disabled>Seleccionar...</option>
                         {cuerdas.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                     <InputField type="number" label={`Peso (${getWeightUnitAbbr(globalWeightUnit)})`} value={weight} onChange={e => setWeight(Number(e.target.value))} required step="any" />
-                     <InputField type="number" label="Meses" value={ageMonths} onChange={e => setAgeMonths(Number(e.target.value))} required min="1" />
-                     <InputField label="ID de Marcaje" value={markingId} onChange={e => setMarkingId(e.target.value)} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <InputField type="number" label={`Peso (${getWeightUnitAbbr(globalWeightUnit)})`} value={weight} onChange={e => setWeight(Number(e.target.value))} required step="any" min="0" />
+                    <InputField type="number" label="Meses" value={ageMonths} onChange={e => handleAgeChange(Number(e.target.value))} required min="1" />
                 </div>
-                <div className="flex justify-end pt-4 space-x-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                     <InputField 
+                        type="number"
+                        label="Marca" 
+                        value={isGallo ? '12' : marca}
+                        onChange={(e) => setMarca(e.target.value)}
+                        disabled={isGallo}
+                        required={!isGallo}
+                        min="1"
+                        max="11"
+                     />
+                     <InputField label="Tipo (Pollo/Gallo)" value={tipoEdad} disabled />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-400 mb-1">Tipo de Pluma</label>
+                        <select value={tipoGallo} onChange={e => setTipoGallo(e.target.value as TipoGallo)} required className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition">
+                            {Object.values(TipoGallo).map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                    </div>
+                    <InputField label="ID de Marcaje" value={markingId} onChange={e => setMarkingId(e.target.value)} required />
+                </div>
+                <div className="flex justify-end pt-4 space-x-2 border-t border-gray-700 mt-6">
                     <button type="button" onClick={onClose} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Cancelar</button>
                     <button type="submit" className="bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-2 px-4 rounded-lg">Guardar</button>
                 </div>
@@ -312,6 +390,58 @@ const GalloFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
         </Modal>
     );
 }
+
+const PrintablePlanilla: React.FC<{ torneo: Torneo }> = ({ torneo }) => (
+    <div id="printable-planilla" className="p-8 space-y-6 bg-white text-black text-lg">
+        <div className="text-center border-b-2 border-black pb-4">
+            <h1 className="text-4xl font-bold">{torneo.name}</h1>
+            <p className="text-2xl mt-2">{torneo.date}</p>
+        </div>
+        <div className="space-y-8 pt-4">
+            <div className="flex items-center space-x-4">
+                <label className="font-bold w-1/4">Nombre del Criadero:</label>
+                <div className="border-b-2 border-dotted border-black flex-grow h-8"></div>
+            </div>
+            <div className="flex items-center space-x-4">
+                <label className="font-bold w-1/4">Dueño de los gallos:</label>
+                <div className="border-b-2 border-dotted border-black flex-grow h-8"></div>
+            </div>
+             <div className="flex items-center space-x-4">
+                <label className="font-bold w-1/4">Frente:</label>
+                <div className="border-b-2 border-dotted border-black flex-grow h-8"></div>
+            </div>
+            <div className="flex items-center space-x-4">
+                <label className="font-bold w-1/4">ID del Anillo:</label>
+                <div className="border-b-2 border-dotted border-black flex-grow h-8"></div>
+            </div>
+            <div className="flex items-center space-x-4">
+                <label className="font-bold w-1/4">ID de Marcaje:</label>
+                <div className="border-b-2 border-dotted border-black flex-grow h-8"></div>
+            </div>
+            <div className="flex items-center space-x-4">
+                <label className="font-bold w-1/4">Color del Gallo:</label>
+                <div className="border-b-2 border-dotted border-black flex-grow h-8"></div>
+            </div>
+            <div className="flex items-center space-x-4">
+                <label className="font-bold w-1/4">Peso:</label>
+                <div className="border-b-2 border-dotted border-black flex-grow h-8"></div>
+            </div>
+            <div className="flex items-center space-x-4">
+                <label className="font-bold w-1/4">Edad (meses):</label>
+                <div className="border-b-2 border-dotted border-black flex-grow h-8"></div>
+            </div>
+            <div className="flex items-center space-x-4">
+                <label className="font-bold w-1/4">Tipo (Pollo/Gallo):</label>
+                <div className="border-b-2 border-dotted border-black flex-grow h-8"></div>
+            </div>
+            <div className="flex items-center space-x-4">
+                <label className="font-bold w-1/4">Tipo de Pluma (Liso/Pava):</label>
+                <div className="border-b-2 border-dotted border-black flex-grow h-8"></div>
+            </div>
+        </div>
+    </div>
+);
+
 
 // --- SCREEN ---
 interface SetupScreenProps {
@@ -323,7 +453,7 @@ interface SetupScreenProps {
     showNotification: (message: string, type: Notification['type']) => void; 
     onSaveCuerda: (cuerdaData: Omit<Cuerda, 'id' | 'baseCuerdaId'>, currentCuerdaId: string | null) => void;
     onDeleteCuerda: (cuerdaId: string) => void;
-    onSaveGallo: (galloData: Omit<Gallo, 'id'>, currentGalloId: string | null) => void;
+    onSaveGallo: (galloData: Omit<Gallo, 'id' | 'tipoEdad'>, currentGalloId: string | null) => void;
     onDeleteGallo: (galloId: string) => void;
     isMatchmaking: boolean;
 }
@@ -340,7 +470,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ cuerdas, gallos, torneo, onUp
         setCuerdaModalOpen(false);
     };
 
-    const handleSaveGalloClick = (galloData: Omit<Gallo, 'id'>) => {
+    const handleSaveGalloClick = (galloData: Omit<Gallo, 'id' | 'tipoEdad'>) => {
         onSaveGallo(galloData, currentGallo?.id || null);
         setGalloModalOpen(false);
     };
@@ -361,9 +491,15 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ cuerdas, gallos, torneo, onUp
         return acc;
     }, [gallos, cuerdas]);
 
+    const handlePrintPlanilla = () => {
+        document.body.classList.add('printing-planilla');
+        window.print();
+        document.body.classList.remove('printing-planilla');
+    };
+
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 print-target">
             <div className="text-center">
                 <h2 className="text-2xl sm:text-3xl font-bold text-white">Configuración del Torneo</h2>
                 <p className="text-gray-400 mt-2">Define las reglas y gestiona los participantes antes de iniciar.</p>
@@ -375,6 +511,28 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ cuerdas, gallos, torneo, onUp
                         <div className="space-y-4">
                             <InputField label="Nombre del Torneo" value={torneo.name} onChange={(e) => onUpdateTorneo({...torneo, name: e.target.value})} />
                             <InputField type="date" label="Fecha" value={torneo.date} onChange={(e) => onUpdateTorneo({...torneo, date: e.target.value})} />
+                             <button onClick={handlePrintPlanilla} className="w-full mt-2 text-sm bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Imprimir Planilla de Ingreso</button>
+                            <div className="border-t border-gray-700 my-2"></div>
+                             <h4 className="text-md font-semibold text-amber-400">Pesos Permitidos</h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                               <InputField 
+                                   type="number" 
+                                   label={`Peso Mínimo (${getWeightUnitAbbr(torneo.weightUnit)})`}
+                                   value={convertFromGrams(torneo.minWeight, torneo.weightUnit).toFixed(2)} 
+                                   step="0.01"
+                                   onChange={(e) => onUpdateTorneo({...torneo, minWeight: convertToGrams(Number(e.target.value), torneo.weightUnit)})} 
+                                />
+                                <InputField 
+                                   type="number" 
+                                   label={`Peso Máximo (${getWeightUnitAbbr(torneo.weightUnit)})`}
+                                   value={convertFromGrams(torneo.maxWeight, torneo.weightUnit).toFixed(2)} 
+                                   step="0.01"
+                                   onChange={(e) => onUpdateTorneo({...torneo, maxWeight: convertToGrams(Number(e.target.value), torneo.weightUnit)})} 
+                                />
+                            </div>
+
+                            <div className="border-t border-gray-700 my-2"></div>
+                            <h4 className="text-md font-semibold text-amber-400">Tolerancias</h4>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-400 mb-1">Unidad de Peso</label>
@@ -382,11 +540,11 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ cuerdas, gallos, torneo, onUp
                                         {Object.values(PesoUnit).map(u => <option key={u} value={u}>{u.charAt(0).toUpperCase() + u.slice(1)}</option>)}
                                     </select>
                                 </div>
-                                <InputField type="number" label="Tolerancia de peso (±)" value={torneo.weightTolerance} onChange={(e) => onUpdateTorneo({...torneo, weightTolerance: Number(e.target.value)})} />
+                                <InputField type="number" label="Tolerancia de peso (± g)" value={torneo.weightTolerance} onChange={(e) => onUpdateTorneo({...torneo, weightTolerance: Number(e.target.value)})} />
                             </div>
-                            <InputField type="number" label="Tolerancia de Meses (±)" value={torneo.ageToleranceMonths ?? ''} onChange={(e) => onUpdateTorneo({...torneo, ageToleranceMonths: Number(e.target.value)})} />
+                            <InputField type="number" label="Tolerancia de Meses (±, solo pollos)" value={torneo.ageToleranceMonths ?? ''} onChange={(e) => onUpdateTorneo({...torneo, ageToleranceMonths: Number(e.target.value)})} />
                             
-                            <div className="border-t border-gray-700 my-4"></div>
+                            <div className="border-t border-gray-700 my-2"></div>
                             <div className="flex items-center justify-between">
                                 <label htmlFor="rondas-toggle" className="text-white font-medium text-sm sm:text-base">Cotejo por rondas</label>
                                 <ToggleSwitch
@@ -448,23 +606,29 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ cuerdas, gallos, torneo, onUp
                                         <span className="text-sm font-normal bg-gray-700 text-gray-300 px-2.5 py-0.5 rounded-full">{gallosInGroup.length}</span>
                                     </h4>
                                     <div className="space-y-2">
-                                        {gallosInGroup.map(g => (
-                                            <div key={g.id} className="flex justify-between items-center bg-gray-700/50 p-2 sm:p-3 rounded-lg">
-                                                <div>
-                                                    <p className="font-semibold text-white text-sm sm:text-base">{g.color} <span className="text-xs text-gray-400 font-normal">({g.ringId})</span></p>
+                                        {gallosInGroup.map(g => {
+                                            const weightInGrams = convertToGrams(g.weight, g.weightUnit);
+                                            const isOutOfWeightRange = weightInGrams < torneo.minWeight || weightInGrams > torneo.maxWeight;
+                                            return (
+                                                <div key={g.id} className="flex justify-between items-center bg-gray-700/50 p-2 sm:p-3 rounded-lg">
+                                                    <div className="flex items-center space-x-2">
+                                                        {isOutOfWeightRange && <WarningIcon className="w-5 h-5 text-yellow-400 flex-shrink-0" title="Peso fuera de rango del torneo"/>}
+                                                        <p className="font-semibold text-white text-sm sm:text-base">{g.color} <span className="text-xs text-gray-400 font-normal">({g.ringId})</span></p>
+                                                    </div>
+                                                    <div className="flex items-center space-x-1 sm:space-x-2">
+                                                        <span className="font-mono text-xs sm:text-sm bg-blue-900/60 px-2 py-1 rounded text-blue-200">{g.tipoGallo}</span>
+                                                        <span className="font-mono text-xs sm:text-sm bg-gray-600/80 px-2 py-1 rounded text-white">{g.ageMonths}m</span>
+                                                        <span className="font-mono text-xs sm:text-sm bg-gray-800 px-2 py-1 rounded">{formatWeight(g, torneo.weightUnit)}</span>
+                                                        <button onClick={() => { setCurrentGallo(g); setGalloModalOpen(true); }} className="text-gray-400 hover:text-amber-400 transition-colors p-1">
+                                                            <PencilIcon className="w-4 h-4 sm:w-5 sm:h-5"/>
+                                                        </button>
+                                                        <button onClick={() => onDeleteGallo(g.id)} className="text-gray-400 hover:text-red-500 transition-colors p-1">
+                                                            <TrashIcon className="w-4 h-4 sm:w-5 sm:h-5"/>
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center space-x-1 sm:space-x-2">
-                                                    {g.ageMonths > 0 && <span className="font-mono text-xs sm:text-sm bg-gray-600/80 px-2 py-1 rounded text-white">{g.ageMonths}m</span>}
-                                                    <span className="font-mono text-xs sm:text-sm bg-gray-800 px-2 py-1 rounded">{formatWeight(g, torneo.weightUnit)}</span>
-                                                    <button onClick={() => { setCurrentGallo(g); setGalloModalOpen(true); }} className="text-gray-400 hover:text-amber-400 transition-colors p-1">
-                                                        <PencilIcon className="w-4 h-4 sm:w-5 sm:h-5"/>
-                                                    </button>
-                                                    <button onClick={() => onDeleteGallo(g.id)} className="text-gray-400 hover:text-red-500 transition-colors p-1">
-                                                        <TrashIcon className="w-4 h-4 sm:w-5 sm:h-5"/>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
+                                            )
+                                        })}
                                     </div>
                                 </div>
                             ))}
@@ -507,6 +671,9 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ cuerdas, gallos, torneo, onUp
             
             <CuerdaFormModal isOpen={isCuerdaModalOpen} onClose={() => setCuerdaModalOpen(false)} onSave={handleSaveCuerdaClick} cuerda={currentCuerda} baseCuerdas={baseCuerdas} />
             <GalloFormModal isOpen={isGalloModalOpen} onClose={() => setGalloModalOpen(false)} onSave={handleSaveGalloClick} gallo={currentGallo} cuerdas={cuerdas} globalWeightUnit={torneo.weightUnit} showNotification={showNotification} />
+            <div className="printable-planilla-container">
+              <PrintablePlanilla torneo={torneo} />
+            </div>
         </div>
     );
 };

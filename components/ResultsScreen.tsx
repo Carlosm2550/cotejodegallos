@@ -1,4 +1,5 @@
 
+
 import React, { useMemo, useState } from 'react';
 import { Pelea, Torneo, Cuerda, CuerdaStats, Gallo, SortConfig, SortKey, PesoUnit } from '../types';
 import { ChevronUpIcon, ChevronDownIcon } from './Icons';
@@ -275,9 +276,10 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
                                                 const opponentRooster = thisTeamRooster === fight.roosterA ? fight.roosterB : fight.roosterA;
                                                 const fightTime = formatTime(fight.duration || 0);
                                                 return (
-                                                    <div key={fight.id} className="text-xs grid grid-cols-2 md:grid-cols-6 gap-x-4 gap-y-1 p-1 border-b border-gray-300">
+                                                    <div key={fight.id} className="text-xs grid grid-cols-2 md:grid-cols-7 gap-x-4 gap-y-1 p-1 border-b border-gray-300">
                                                         <span className="font-semibold md:col-span-1">Anillo: <span className="font-normal">{thisTeamRooster.ringId}</span></span>
                                                         <span className="font-semibold md:col-span-1">Marcaje: <span className="font-normal">{thisTeamRooster.markingId}</span></span>
+                                                        <span className="font-semibold md:col-span-1">Tipo: <span className="font-normal">{thisTeamRooster.tipoGallo}</span></span>
                                                         <span className="font-semibold md:col-span-1">Peso: <span className="font-normal">{formatWeight(thisTeamRooster, torneo.weightUnit)}</span></span>
                                                         <span className="font-semibold md:col-span-1">Meses: <span className="font-normal">{thisTeamRooster.ageMonths}m</span></span>
                                                         <span className="font-semibold md:col-span-1">Oponente: <span className="font-normal">{opponentRooster.color} ({getCuerdaName(opponentRooster.cuerdaId)})</span></span>

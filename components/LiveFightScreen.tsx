@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Pelea, Torneo, Cuerda, Gallo, PesoUnit } from '../types';
 import { PlayIcon, PauseIcon, RepeatIcon } from './Icons';
@@ -113,7 +114,7 @@ const LiveFightScreen: React.FC<LiveFightScreenProps> = ({ peleas, onFinishFight
             <div className="text-center md:text-right">
                  <h3 className="text-2xl font-bold text-white">{currentFight.roosterA.color}</h3>
                  <p className="text-amber-400">{getCuerdaName(currentFight.roosterA.cuerdaId)}</p>
-                 <p className="text-gray-400">{formatWeight(currentFight.roosterA, torneo.weightUnit)} / {currentFight.roosterA.ageMonths}m</p>
+                 <p className="text-gray-400">{formatWeight(currentFight.roosterA, torneo.weightUnit)} / {currentFight.roosterA.ageMonths}m / {currentFight.roosterA.tipoGallo}</p>
             </div>
 
             {/* Manual Time Input */}
@@ -144,7 +145,7 @@ const LiveFightScreen: React.FC<LiveFightScreenProps> = ({ peleas, onFinishFight
             <div className="text-center md:text-left">
                  <h3 className="text-2xl font-bold text-white">{currentFight.roosterB.color}</h3>
                  <p className="text-amber-400">{getCuerdaName(currentFight.roosterB.cuerdaId)}</p>
-                 <p className="text-gray-400">{formatWeight(currentFight.roosterB, torneo.weightUnit)} / {currentFight.roosterB.ageMonths}m</p>
+                 <p className="text-gray-400">{formatWeight(currentFight.roosterB, torneo.weightUnit)} / {currentFight.roosterB.ageMonths}m / {currentFight.roosterB.tipoGallo}</p>
             </div>
         </div>
 

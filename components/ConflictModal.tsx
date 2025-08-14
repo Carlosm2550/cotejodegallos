@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
-import { Gallo, Cuerda, PesoUnit, Notification } from '../types';
+import { Gallo, Cuerda, PesoUnit, Notification, TipoGallo } from '../types';
 import Modal from './Modal';
 import { TrashIcon } from './Icons';
 
@@ -30,7 +31,7 @@ const getWeightUnitAbbr = (unit: PesoUnit): string => {
 interface EditLeftoverGalloModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (galloData: Omit<Gallo, 'id'>, currentGalloId: string) => void;
+    onSave: (galloData: Omit<Gallo, 'id' | 'tipoEdad' | 'marca'>, currentGalloId: string) => void;
     onDeleteCuerda: (cuerdaId: string) => void;
     gallo: Gallo | null;
     cuerdas: Cuerda[];
@@ -53,6 +54,7 @@ const EditLeftoverGalloModal: React.FC<EditLeftoverGalloModalProps> = ({
     const [weight, setWeight] = useState(0);
     const [ageMonths, setAgeMonths] = useState(1);
     const [markingId, setMarkingId] = useState('');
+    const [tipoGallo, setTipoGallo] = useState<TipoGallo>(TipoGallo.LISO);
     const [confirmDeleteCuerda, setConfirmDeleteCuerda] = useState(false);
 
     const cuerda = useMemo(() => gallo ? cuerdas.find(c => c.id === gallo.cuerdaId) : null, [gallo, cuerdas]);
@@ -64,6 +66,7 @@ const EditLeftoverGalloModal: React.FC<EditLeftoverGalloModalProps> = ({
             setWeight(gallo.weight || 0);
             setAgeMonths(gallo.ageMonths || 1);
             setMarkingId(gallo.markingId || '');
+            setTipoGallo(gallo.tipoGallo || TipoGallo.LISO);
             setConfirmDeleteCuerda(false); // Reset on open
         }
     }, [isOpen, gallo]);
@@ -73,7 +76,7 @@ const EditLeftoverGalloModal: React.FC<EditLeftoverGalloModalProps> = ({
         if (!gallo) return;
         
         onSave(
-            { ringId, color, cuerdaId: gallo.cuerdaId, weight, weightUnit: globalWeightUnit, ageMonths, markingId },
+            { ringId, color, cuerdaId: gallo.cuerdaId, weight, weightUnit: globalWeightUnit, ageMonths, markingId, tipoGallo },
             gallo.id
         );
         onClose();
@@ -95,8 +98,16 @@ const EditLeftoverGalloModal: React.FC<EditLeftoverGalloModalProps> = ({
                     <InputField label="ID del Anillo" value={ringId} onChange={e => setRingId(e.target.value)} required />
                     <InputField label="Color del Gallo" value={color} onChange={e => setColor(e.target.value)} required />
                 </div>
-                <div>
-                    <InputField label="Cuerda" value={cuerda?.name || 'N/A'} disabled />
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-400 mb-1">Tipo de Gallo</label>
+                        <select value={tipoGallo} onChange={e => setTipoGallo(e.target.value as TipoGallo)} required className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition">
+                             {Object.values(TipoGallo).map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                    </div>
+                     <div>
+                        <InputField label="Cuerda" value={cuerda?.name || 'N/A'} disabled />
+                    </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                      <InputField type="number" label={`Peso (${getWeightUnitAbbr(globalWeightUnit)})`} value={weight} onChange={e => setWeight(Number(e.target.value))} required step="any" />

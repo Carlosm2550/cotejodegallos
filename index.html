@@ -18,25 +18,55 @@
           radial-gradient(at 47% 33%, hsl(200.00, 0%, 14%) 0, transparent 59%),
           radial-gradient(at 82% 65%, hsl(215.00, 19%, 17%) 0, transparent 55%);
       }
+      .printable-planilla-container {
+        display: none;
+      }
       @media print {
         body {
           background-color: white !important;
           color: black !important;
           font-family: Arial, sans-serif;
-          font-size: 10pt;
+          font-size: 12pt;
         }
-        header, footer, .print-hide {
-          display: none !important;
+        
+        /* Default hide everything */
+        .printable-area, .printable-card, #printable-planilla {
+            display: none;
         }
-        main {
-          padding: 0 !important;
-          margin: 0 !important;
-        }
-        .printable-area, .printable-card {
+
+        /* Show only the targeted print area */
+        body.printing-cartelera .printable-card,
+        body.printing-results .printable-area,
+        body.printing-planilla #printable-planilla {
+            display: block !important;
             box-shadow: none !important;
             border: none !important;
             background: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100%;
         }
+
+        body.printing-planilla .printable-planilla-container {
+            display: block !important;
+        }
+
+        body.printing-cartelera .fight-card,
+        body.printing-results tr {
+            page-break-inside: avoid;
+        }
+
+        /* Hide all other elements on the page */
+        body.printing-cartelera > div > :not(main),
+        body.printing-results > div > :not(main),
+        body.printing-planilla > div > :not(main) {
+            display: none !important;
+        }
+        
+        main > div > :not(.print-target) {
+           display: none !important;
+        }
+
         h2, h3, h4 {
             color: black !important;
             margin-top: 20px;
@@ -54,16 +84,14 @@
         /* Specific for ResultsScreen */
         .results-details-row {
             display: table-row !important; /* Force show for printing */
-            page-break-inside: avoid;
         }
         .results-details-cell {
             background-color: #f9f9f9 !important;
             padding-left: 2rem !important;
             border-bottom: 2px solid #ccc !important;
         }
-         /* Specific for MatchmakingScreen */
+     /* Specific for MatchmakingScreen */
         .fight-card {
-            page-break-inside: avoid;
             border: 1px solid #ccc;
             padding: 8px;
             margin-bottom: 8px;

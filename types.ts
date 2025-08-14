@@ -2,6 +2,8 @@
 
 
 
+
+
 export enum Screen {
   SETUP,
   MATCHMAKING,
@@ -14,6 +16,17 @@ export enum PesoUnit {
   OUNCES = 'onzas',
   POUNDS = 'libras',
 }
+
+export enum TipoGallo {
+  LISO = 'Liso',
+  PAVA = 'pava',
+}
+
+export enum TipoEdad {
+  POLLO = 'Pollo',
+  GALLO = 'Gallo',
+}
+
 
 export interface Cuerda {
   id: string;
@@ -31,6 +44,9 @@ export interface Gallo {
   weightUnit: PesoUnit;
   ageMonths: number;
   markingId: string;
+  tipoGallo: TipoGallo;
+  tipoEdad: TipoEdad;
+  marca: number;
 }
 
 export interface Pelea {
@@ -50,6 +66,8 @@ export interface Torneo {
   ageToleranceMonths: number;
   exceptions: string[][]; // Array of exception pairs, e.g., [['p1', 'p2'], ['p1', 'p3']]
   weightUnit: PesoUnit;
+  minWeight: number; // In grams
+  maxWeight: number; // In grams
   rondas: {
     enabled: boolean;
     pointsForWin: number;
