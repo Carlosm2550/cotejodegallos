@@ -1,15 +1,4 @@
-
-
-
-
-
-
-
-
-
-
-
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Cuerda, Gallo, Torneo, Notification, PesoUnit, TipoGallo, TipoEdad } from '../types';
 import { SettingsIcon, RoosterIcon, UsersIcon, PlusIcon, TrashIcon, PencilIcon, XIcon, PlayIcon, WarningIcon } from './Icons';
 import Modal from './Modal';
@@ -185,86 +174,48 @@ const ExceptionsManager: React.FC<{ cuerdas: Cuerda[]; exceptions: string[][]; o
         </div>
     );
 };
-const CuerdaFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (cuerda: Omit<Cuerda, 'id' | 'baseCuerdaId'>, id: string | null) => void; cuerda: Cuerda | null; baseCuerdas: Cuerda[] }> = ({ isOpen, onClose, onSave, cuerda, baseCuerdas }) => {
+
+const CuerdaFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (data: { name: string, owner: string, fronts: number }, id: string | null) => void; cuerda: Cuerda | null; allCuerdas: Cuerda[] }> = ({ isOpen, onClose, onSave, cuerda, allCuerdas }) => {
     const [name, setName] = useState('');
     const [owner, setOwner] = useState('');
-    const [mode, setMode] = useState<'new' | 'front'>('new');
-    const [selectedBaseCuerdaId, setSelectedBaseCuerdaId] = useState<string>('');
-    const isAdding = !cuerda;
+    const [fronts, setFronts] = useState(1);
+
+    const isEditing = !!cuerda;
 
     useEffect(() => {
         if (isOpen) {
-            setName(cuerda?.name || '');
-            setOwner(cuerda?.owner || '');
-            if (isAdding) {
-                setMode('new');
-                setSelectedBaseCuerdaId(baseCuerdas[0]?.id || '');
-            }
-        }
-    }, [isOpen, cuerda, isAdding, baseCuerdas]);
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (isAdding) {
-            if (mode === 'front') {
-                if (selectedBaseCuerdaId) {
-                    onSave({ name: `__FRONT__${selectedBaseCuerdaId}`, owner: '' }, null);
+            if (isEditing) {
+                const baseCuerda = cuerda.baseCuerdaId ? allCuerdas.find(c => c.id === cuerda.baseCuerdaId) : cuerda;
+                if (baseCuerda) {
+                    const totalFronts = 1 + allCuerdas.filter(c => c.baseCuerdaId === baseCuerda.id).length;
+                    setName(baseCuerda.name);
+                    setOwner(baseCuerda.owner);
+                    setFronts(totalFronts);
                 }
             } else {
-                onSave({ name, owner }, null);
+                // Reset for new cuerda
+                setName('');
+                setOwner('');
+                setFronts(1);
             }
-        } else {
-            onSave({ name, owner }, cuerda.id);
         }
+    }, [isOpen, cuerda, allCuerdas, isEditing]);
+    
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const baseCuerdaId = isEditing ? (cuerda.baseCuerdaId || cuerda.id) : null;
+        onSave({ name, owner, fronts: Number(fronts) }, baseCuerdaId);
         onClose();
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={isAdding ? 'Añadir Cuerda o Frente' : 'Editar Cuerda'}>
+        <Modal isOpen={isOpen} onClose={onClose} title={isEditing ? 'Editar Cuerda' : 'Añadir Cuerda'}>
             <form onSubmit={handleSubmit} className="space-y-6">
-                {isAdding && (
-                    <div>
-                        <fieldset className="flex gap-4">
-                            <legend className="sr-only">Tipo de adición</legend>
-                            <div className="flex items-center">
-                                <input id="mode-new" type="radio" value="new" name="mode" checked={mode === 'new'} onChange={() => setMode('new')} className="w-4 h-4 text-amber-600 bg-gray-700 border-gray-600 focus:ring-amber-500" />
-                                <label htmlFor="mode-new" className="ml-2 text-sm font-medium text-gray-300">Crear nueva cuerda</label>
-                            </div>
-                            <div className="flex items-center">
-                                <input id="mode-front" type="radio" value="front" name="mode" checked={mode === 'front'} onChange={() => setMode('front')} className="w-4 h-4 text-amber-600 bg-gray-700 border-gray-600 focus:ring-amber-500" />
-                                <label htmlFor="mode-front" className="ml-2 text-sm font-medium text-gray-300">Agregar otro frente</label>
-                            </div>
-                        </fieldset>
-                        <p className="text-xs text-gray-400 mt-2">Un "frente" es una inscripción adicional para una cuerda existente.</p>
-                    </div>
-                )}
-                
-                {mode === 'new' || !isAdding ? (
-                    <div className="space-y-4">
-                        <InputField label="Nombre de la Cuerda" value={name} onChange={e => setName(e.target.value)} required />
-                        <InputField label="Dueño" value={owner} onChange={e => setOwner(e.target.value)} required />
-                    </div>
-                ) : null}
-
-                {isAdding && mode === 'front' && (
-                     <div>
-                        <label htmlFor="baseCuerdaSelect" className="block text-sm font-medium text-gray-400 mb-1">Seleccione la cuerda existente</label>
-                        <select
-                            id="baseCuerdaSelect"
-                            value={selectedBaseCuerdaId}
-                            onChange={e => setSelectedBaseCuerdaId(e.target.value)}
-                            required
-                            className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
-                        >
-                            {baseCuerdas.length === 0 ? (
-                                <option disabled>No hay cuerdas base para seleccionar</option>
-                            ) : (
-                                baseCuerdas.map(p => <option key={p.id} value={p.id}>{p.name}</option>)
-                            )}
-                        </select>
-                     </div>
-                )}
-                
+                <div className="space-y-4">
+                    <InputField label="Nombre de la Cuerda" value={name} onChange={e => setName(e.target.value)} required />
+                    <InputField label="Dueño" value={owner} onChange={e => setOwner(e.target.value)} required />
+                    <InputField type="number" label="Frentes en este Torneo" value={fronts} onChange={e => setFronts(Math.max(1, Number(e.target.value)))} required min="1" />
+                </div>
                 <div className="flex justify-end pt-4 space-x-2 border-t border-gray-700">
                     <button type="button" onClick={onClose} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Cancelar</button>
                     <button type="submit" className="bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-2 px-4 rounded-lg">Guardar</button>
@@ -272,17 +223,50 @@ const CuerdaFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: 
             </form>
         </Modal>
     );
-}
-const GalloFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (gallo: Omit<Gallo, 'id' | 'tipoEdad'>) => void; gallo: Gallo | null; cuerdas: Cuerda[]; globalWeightUnit: PesoUnit; showNotification: (message: string, type: Notification['type']) => void; }> = ({ isOpen, onClose, onSave, gallo, cuerdas, globalWeightUnit, showNotification }) => {
+};
+
+const GalloFormModal: React.FC<{ 
+    isOpen: boolean; 
+    onClose: () => void; 
+    onUpdate: (gallo: Omit<Gallo, 'id' | 'tipoEdad'>, currentGalloId: string) => void; 
+    onSaveMultiple: (gallos: Omit<Gallo, 'id' | 'tipoEdad'>[]) => void;
+    gallo: Gallo | null; 
+    cuerdas: Cuerda[];
+    torneo: Torneo;
+    showNotification: (message: string, type: Notification['type']) => void; 
+}> = ({ isOpen, onClose, onUpdate, onSaveMultiple, gallo, cuerdas, torneo, showNotification }) => {
+    
+    type StagedGallo = Omit<Gallo, 'id' | 'tipoEdad'> & { stagedId: number };
+    
+    const isEditing = !!gallo;
+    
+    // Form state
     const [ringId, setRingId] = useState('');
     const [color, setColor] = useState('');
-    const [cuerdaId, setCuerdaId] = useState('');
     const [weight, setWeight] = useState(0);
-    const [ageMonths, setAgeMonths] = useState(1);
+    const [ageMonths, setAgeMonths] = useState(12);
     const [markingId, setMarkingId] = useState('');
     const [tipoGallo, setTipoGallo] = useState<TipoGallo>(TipoGallo.LISO);
     const [marca, setMarca] = useState<string>('');
     
+    // Modal flow state
+    const [selectedBaseCuerdaId, setSelectedBaseCuerdaId] = useState('');
+    const [activeFrenteId, setActiveFrenteId] = useState('');
+    const [stagedGallos, setStagedGallos] = useState<StagedGallo[]>([]);
+    const [editingStagedId, setEditingStagedId] = useState<number | null>(null);
+
+    const prevIsOpen = React.useRef(isOpen);
+
+    const baseCuerdas = useMemo(() => cuerdas.filter(c => !c.baseCuerdaId).sort((a,b) => a.name.localeCompare(b.name)), [cuerdas]);
+    
+    const availableFronts = useMemo(() => {
+        if (!selectedBaseCuerdaId) return [];
+        const base = cuerdas.find(c => c.id === selectedBaseCuerdaId);
+        if (!base) return [];
+        const fronts = cuerdas.filter(c => c.baseCuerdaId === selectedBaseCuerdaId).sort((a,b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+        return [base, ...fronts];
+    }, [selectedBaseCuerdaId, cuerdas]);
+
     const { isGallo, tipoEdad } = useMemo(() => {
         const isGalloDetected = ageMonths >= 12;
         return {
@@ -291,102 +275,345 @@ const GalloFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
         };
     }, [ageMonths]);
 
-
+    const resetFormFields = useCallback(() => {
+        setRingId('');
+        setColor('');
+        setWeight(0);
+        setAgeMonths(12);
+        setMarkingId('');
+        setTipoGallo(TipoGallo.LISO);
+        setMarca('12');
+        setEditingStagedId(null);
+    }, []);
+    
+    const resetFullModal = useCallback(() => {
+        resetFormFields();
+        setSelectedBaseCuerdaId('');
+        setActiveFrenteId('');
+        setStagedGallos([]);
+    }, [resetFormFields]);
+    
+    // Initialize or reset state when modal opens
     useEffect(() => {
-        if (isOpen) {
-            const initialAge = gallo?.ageMonths || 1;
-            const initialIsGallo = initialAge >= 12;
-
-            setRingId(gallo?.ringId || '');
-            setColor(gallo?.color || '');
-            setCuerdaId(gallo?.cuerdaId || cuerdas[0]?.id || '');
-            setWeight(gallo?.weight || 0);
-            setAgeMonths(initialAge);
-            setMarkingId(gallo?.markingId || '');
-            setTipoGallo(gallo?.tipoGallo || TipoGallo.LISO);
-
-            if (gallo) {
+        if (isOpen && !prevIsOpen.current) {
+            if (isEditing && gallo) {
+                const galloCuerda = cuerdas.find(c => c.id === gallo.cuerdaId);
+                const baseId = galloCuerda?.baseCuerdaId || galloCuerda?.id || '';
+                setSelectedBaseCuerdaId(baseId);
+                setActiveFrenteId(gallo.cuerdaId);
+                setRingId(gallo.ringId);
+                setColor(gallo.color);
+                setWeight(gallo.weight);
+                setAgeMonths(gallo.ageMonths);
+                setMarkingId(gallo.markingId);
+                setTipoGallo(gallo.tipoGallo);
                 setMarca(gallo.marca.toString());
             } else {
-                setMarca(initialIsGallo ? '12' : '');
+                resetFullModal();
+                if (baseCuerdas.length > 0) {
+                    setSelectedBaseCuerdaId(baseCuerdas[0].id);
+                }
             }
         }
-    }, [isOpen, gallo, cuerdas]);
-    
+        prevIsOpen.current = isOpen;
+    }, [isOpen, isEditing, gallo, cuerdas, baseCuerdas, resetFullModal]);
+
+    // Update active frente when base cuerda changes or staged gallos are updated
+    useEffect(() => {
+        if (!isEditing && availableFronts.length > 0) {
+            const firstAvailableFrente = availableFronts.find(frente => {
+                if (!torneo.rondas.enabled) return true;
+                const roostersInFrente = stagedGallos.filter(g => g.cuerdaId === frente.id).length;
+                return roostersInFrente < torneo.roostersPerTeam;
+            });
+            setActiveFrenteId(firstAvailableFrente?.id || availableFronts[0].id);
+        }
+    }, [selectedBaseCuerdaId, availableFronts, isEditing, stagedGallos, torneo]);
+
+
     const handleAgeChange = (newAge: number) => {
         setAgeMonths(newAge);
-        if (newAge >= 12) {
+        const newIsGallo = newAge >= 12;
+        if (newIsGallo) {
             setMarca('12');
         } else {
-            // If it was a gallo (age >= 12) and now it's a pollo, clear the marca for manual input
             if (ageMonths >= 12) {
                 setMarca('');
             }
         }
     }
-    
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!cuerdaId) {
-            showNotification("Por favor, seleccione una cuerda.", 'error');
-            return;
+
+    const validateAndGetData = (): Omit<Gallo, 'id' | 'tipoEdad'> | null => {
+        if (!activeFrenteId || !ringId || !color) {
+            showNotification("Por favor, complete todos los campos requeridos.", 'error');
+            return null;
         }
 
         const finalMarca = isGallo ? 12 : parseInt(marca, 10);
-        if (!isGallo && (marca.trim() === '' || isNaN(finalMarca))) {
-            showNotification("La Marca es obligatoria y debe ser un número para los pollos.", 'error');
-            return;
+        if (!isGallo && (marca.trim() === '' || isNaN(finalMarca) || finalMarca < 1 || finalMarca > 11)) {
+            showNotification("La Marca es obligatoria para pollos y debe ser un número entre 1 y 11.", 'error');
+            return null;
         }
 
-        onSave({ ringId, color, cuerdaId, weight, weightUnit: globalWeightUnit, ageMonths, markingId, tipoGallo, marca: finalMarca });
-        onClose();
+        return { ringId, color, cuerdaId: activeFrenteId, weight, weightUnit: torneo.weightUnit, ageMonths, markingId, tipoGallo, marca: finalMarca };
+    };
+    
+    const handleStageGallo = () => {
+        const galloData = validateAndGetData();
+        if (!galloData) return;
+
+        let updatedStagedGallos;
+        if (editingStagedId !== null) {
+            updatedStagedGallos = stagedGallos.map(g => g.stagedId === editingStagedId ? { ...galloData, stagedId: g.stagedId } : g);
+            showNotification(`Gallo '${galloData.color}' actualizado.`, 'info');
+        } else {
+            updatedStagedGallos = [...stagedGallos, { ...galloData, stagedId: Date.now() }];
+            showNotification(`Gallo '${galloData.color}' añadido.`, 'success');
+        }
+
+        setStagedGallos(updatedStagedGallos);
+        resetFormFields();
+
+        // Auto-advance logic, only on new add
+        if (editingStagedId === null && torneo.rondas.enabled) {
+            const roostersPerFrente = availableFronts.map(f => ({
+                id: f.id,
+                count: updatedStagedGallos.filter(g => g.cuerdaId === f.id).length
+            }));
+            const currentFrenteStatus = roostersPerFrente.find(f => f.id === activeFrenteId);
+
+            if (currentFrenteStatus && currentFrenteStatus.count >= torneo.roostersPerTeam) {
+                const nextAvailableFrente = availableFronts.find(f => {
+                    const status = roostersPerFrente.find(s => s.id === f.id);
+                    return !status || status.count < torneo.roostersPerTeam;
+                });
+                if (nextAvailableFrente) {
+                    setActiveFrenteId(nextAvailableFrente.id);
+                }
+            }
+        }
     };
 
-    return (
-        <Modal isOpen={isOpen} onClose={onClose} title={gallo ? 'Editar Gallo' : 'Añadir Gallo'}>
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <InputField label="ID del Anillo" value={ringId} onChange={e => setRingId(e.target.value)} required />
-                    <InputField label="Color del Gallo" value={color} onChange={e => setColor(e.target.value)} required />
-                </div>
-                 <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Cuerda</label>
-                    <select value={cuerdaId} onChange={e => setCuerdaId(e.target.value)} required className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition">
-                        <option value="" disabled>Seleccionar...</option>
-                        {cuerdas.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+    const handleEditStagedGallo = (stagedGallo: StagedGallo) => {
+        setActiveFrenteId(stagedGallo.cuerdaId);
+        setRingId(stagedGallo.ringId);
+        setColor(stagedGallo.color);
+        setWeight(stagedGallo.weight);
+        setAgeMonths(stagedGallo.ageMonths);
+        setMarkingId(stagedGallo.markingId);
+        setTipoGallo(stagedGallo.tipoGallo);
+        setMarca(stagedGallo.marca.toString());
+        setEditingStagedId(stagedGallo.stagedId);
+    };
+
+    const handleRemoveStagedGallo = (stagedIdToRemove: number) => {
+        setStagedGallos(stagedGallos.filter(g => g.stagedId !== stagedIdToRemove));
+    };
+    
+    const handleTabClick = (frenteId: string) => {
+        const roostersInFrente = stagedGallos.filter(g => g.cuerdaId === frenteId).length;
+        if (torneo.rondas.enabled && roostersInFrente >= torneo.roostersPerTeam && editingStagedId === null) {
+            if (window.confirm("Este frente ya está completo. ¿Deseas editar los gallos?")) {
+                setActiveFrenteId(frenteId);
+            }
+        } else {
+            setActiveFrenteId(frenteId);
+        }
+    };
+
+    const handleSaveAllStaged = () => {
+        if (stagedGallos.length > 0) {
+            onSaveMultiple(stagedGallos.map(({stagedId, ...rest}) => rest));
+            onClose();
+        } else {
+            showNotification("No hay gallos para guardar.", 'info');
+        }
+    };
+    
+    const areAllFrentesFull = useMemo(() => {
+        if (!torneo.rondas.enabled || availableFronts.length === 0) return false;
+        return availableFronts.every(frente => 
+            stagedGallos.filter(g => g.cuerdaId === frente.id).length === torneo.roostersPerTeam
+        );
+    }, [stagedGallos, availableFronts, torneo]);
+
+    const handleSaveEdit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const galloData = validateAndGetData();
+        if (galloData && gallo) {
+            onUpdate(galloData, gallo.id);
+            onClose();
+        }
+    };
+    
+    const renderFormContent = (isFormDisabled: boolean) => (
+         <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <InputField label="ID del Anillo" value={ringId} onChange={e => setRingId(e.target.value)} required disabled={isFormDisabled} />
+                <InputField label="Color del Gallo" value={color} onChange={e => setColor(e.target.value)} required disabled={isFormDisabled} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <InputField type="number" label={`Peso (${getWeightUnitAbbr(torneo.weightUnit)})`} value={weight} onChange={e => setWeight(Number(e.target.value))} required step="any" min="0" disabled={isFormDisabled}/>
+                <InputField type="number" label="Meses" value={ageMonths} onChange={e => handleAgeChange(Number(e.target.value))} required min="1" disabled={isFormDisabled}/>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                 <InputField 
+                    type="number"
+                    label="Marca" 
+                    value={isGallo ? '12' : marca}
+                    onChange={(e) => setMarca(e.target.value)}
+                    disabled={isGallo || isFormDisabled}
+                    required={!isGallo}
+                    min="1"
+                    max="11"
+                 />
+                 <InputField label="Tipo (Pollo/Gallo)" value={tipoEdad} disabled />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Tipo de Pluma</label>
+                    <select value={tipoGallo} onChange={e => setTipoGallo(e.target.value as TipoGallo)} required disabled={isFormDisabled} className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition disabled:bg-gray-600 disabled:opacity-70">
+                        {Object.values(TipoGallo).map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <InputField type="number" label={`Peso (${getWeightUnitAbbr(globalWeightUnit)})`} value={weight} onChange={e => setWeight(Number(e.target.value))} required step="any" min="0" />
-                    <InputField type="number" label="Meses" value={ageMonths} onChange={e => handleAgeChange(Number(e.target.value))} required min="1" />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                     <InputField 
-                        type="number"
-                        label="Marca" 
-                        value={isGallo ? '12' : marca}
-                        onChange={(e) => setMarca(e.target.value)}
-                        disabled={isGallo}
-                        required={!isGallo}
-                        min="1"
-                        max="11"
-                     />
-                     <InputField label="Tipo (Pollo/Gallo)" value={tipoEdad} disabled />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Tipo de Pluma</label>
-                        <select value={tipoGallo} onChange={e => setTipoGallo(e.target.value as TipoGallo)} required className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition">
-                            {Object.values(TipoGallo).map(t => <option key={t} value={t}>{t}</option>)}
+                <InputField label="ID de Marcaje" value={markingId} onChange={e => setMarkingId(e.target.value)} required disabled={isFormDisabled}/>
+            </div>
+        </div>
+    );
+    
+    const selectedCuerdaName = useMemo(() => baseCuerdas.find(c => c.id === selectedBaseCuerdaId)?.name || 'N/A', [selectedBaseCuerdaId, baseCuerdas]);
+
+    return (
+        <Modal size="wide" isOpen={isOpen} onClose={onClose} title={isEditing ? 'Editar Gallo' : `Añadir Gallos para ${selectedCuerdaName}`}>
+            {isEditing ? (
+                 <form onSubmit={handleSaveEdit} className="space-y-4">
+                    {renderFormContent(false)}
+                     <div className="flex justify-end pt-4 space-x-2 border-t border-gray-700 mt-6">
+                         <button type="button" onClick={onClose} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Cancelar</button>
+                         <button type="submit" className="bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-2 px-4 rounded-lg">Guardar Cambios</button>
+                     </div>
+                 </form>
+            ) : (
+                // --- BULK ADD UI ---
+                <div>
+                    {/* Cuerda Selector */}
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-400 mb-1">Cuerda</label>
+                        <select 
+                            value={selectedBaseCuerdaId} 
+                            onChange={e => {
+                                setSelectedBaseCuerdaId(e.target.value);
+                                setStagedGallos([]); // Reset staged gallos when cuerda changes
+                            }} 
+                            required 
+                            className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
+                        >
+                            <option value="" disabled>Seleccionar una cuerda...</option>
+                            {baseCuerdas.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                         </select>
                     </div>
-                    <InputField label="ID de Marcaje" value={markingId} onChange={e => setMarkingId(e.target.value)} required />
+
+                    {selectedBaseCuerdaId && (
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {/* --- Left Column: Form --- */}
+                            <div>
+                                {/* Tabs for Frentes */}
+                                <div className="flex border-b border-gray-600 overflow-x-auto mb-4">
+                                    {availableFronts.map((frente, index) => {
+                                        const roostersInFrente = stagedGallos.filter(g => g.cuerdaId === frente.id).length;
+                                        const isComplete = torneo.rondas.enabled && roostersInFrente >= torneo.roostersPerTeam;
+                                        return (
+                                        <button
+                                            type="button"
+                                            key={frente.id}
+                                            onClick={() => handleTabClick(frente.id)}
+                                            className={`py-2 px-3 text-sm font-medium transition-colors border-b-2 flex-shrink-0 ${
+                                                activeFrenteId === frente.id 
+                                                ? 'border-amber-500 text-amber-400' 
+                                                : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-200'
+                                            } ${isComplete ? 'text-green-400' : ''}`}
+                                        >
+                                            F{index + 1} {torneo.rondas.enabled ? `(${roostersInFrente}/${torneo.roostersPerTeam})` : ''}
+                                        </button>
+                                        )
+                                    })}
+                                </div>
+                                
+                                {/* Form Area */}
+                                {(() => {
+                                    const roostersInActiveFrente = stagedGallos.filter(g => g.cuerdaId === activeFrenteId).length;
+                                    const isFrenteFull = torneo.rondas.enabled && roostersInActiveFrente >= torneo.roostersPerTeam;
+                                    const isFormDisabled = isFrenteFull && editingStagedId === null;
+
+                                    return (
+                                        <>
+                                            {renderFormContent(isFormDisabled)}
+                                            {isFormDisabled && <p className="text-center text-green-400 font-semibold mt-4">Este frente está completo. Seleccione otro frente o edite un gallo existente.</p>}
+                                            <div className="flex justify-end pt-4 mt-4">
+                                                <button 
+                                                    type="button"
+                                                    onClick={handleStageGallo}
+                                                    disabled={isFormDisabled}
+                                                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed"
+                                                >
+                                                    {editingStagedId !== null ? 'Actualizar Gallo' : 'Siguiente'}
+                                                </button>
+                                            </div>
+                                        </>
+                                    );
+                                })()}
+                            </div>
+                            
+                            {/* --- Right Column: Summary --- */}
+                            <div className="space-y-4 md:border-l md:border-gray-700 md:pl-8">
+                                <h4 className="font-bold text-amber-400 mb-2">Gallos registrados</h4>
+                                {stagedGallos.length === 0 ? (
+                                    <p className="text-gray-500 text-center py-2">Aún no se han añadido gallos.</p>
+                                ) : (
+                                   <div className="space-y-3 max-h-[26rem] overflow-y-auto pr-2">
+                                       {availableFronts.map((frente, index) => {
+                                           const gallosForFrente = stagedGallos.filter(g => g.cuerdaId === frente.id);
+                                           if (gallosForFrente.length === 0) return null;
+                                           return (
+                                               <div key={frente.id}>
+                                                   <p className="font-semibold text-sm text-gray-300 mb-1">F{index + 1}:</p>
+                                                   <div className="space-y-1">
+                                                    {gallosForFrente.map(g => (
+                                                        <div key={g.stagedId} className="flex items-center justify-between bg-gray-700/50 p-2 rounded-md">
+                                                            <span className="text-sm">{g.color} ({g.ringId})</span>
+                                                            <div className="flex items-center space-x-2">
+                                                                <button onClick={() => handleEditStagedGallo(g)} className="p-1 text-gray-400 hover:text-amber-400"><PencilIcon className="w-4 h-4"/></button>
+                                                                <button onClick={() => handleRemoveStagedGallo(g.stagedId)} className="p-1 text-gray-400 hover:text-red-400"><TrashIcon className="w-4 h-4"/></button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                   </div>
+                                               </div>
+                                           );
+                                       })}
+                                   </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Final Actions */}
+                        <div className="flex flex-col sm:flex-row justify-between items-center pt-4 space-y-2 sm:space-y-0 sm:space-x-2 border-t border-gray-700 mt-6">
+                            <button type="button" onClick={onClose} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg w-full sm:w-auto">Cancelar</button>
+                            <button 
+                                type="button" 
+                                onClick={handleSaveAllStaged} 
+                                disabled={torneo.rondas.enabled && !areAllFrentesFull}
+                                className="bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-2 px-4 rounded-lg w-full sm:w-auto disabled:bg-gray-500 disabled:cursor-not-allowed disabled:text-gray-300"
+                                title={torneo.rondas.enabled && !areAllFrentesFull ? "Debe completar todos los frentes con el número de gallos requerido" : "Guardar todos los gallos"}
+                            >
+                                Guardar y Cerrar
+                            </button>
+                        </div>
+                    </>
+                    )}
                 </div>
-                <div className="flex justify-end pt-4 space-x-2 border-t border-gray-700 mt-6">
-                    <button type="button" onClick={onClose} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Cancelar</button>
-                    <button type="submit" className="bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-2 px-4 rounded-lg">Guardar</button>
-                </div>
-            </form>
+            )}
         </Modal>
     );
 }
@@ -451,36 +678,40 @@ interface SetupScreenProps {
     onUpdateTorneo: (updatedTorneo: Torneo) => void;
     onStartMatchmaking: () => void; 
     showNotification: (message: string, type: Notification['type']) => void; 
-    onSaveCuerda: (cuerdaData: Omit<Cuerda, 'id' | 'baseCuerdaId'>, currentCuerdaId: string | null) => void;
+    onSaveCuerda: (cuerdaData: { name: string, owner: string, fronts: number }, baseCuerdaId: string | null) => void;
     onDeleteCuerda: (cuerdaId: string) => void;
-    onSaveGallo: (galloData: Omit<Gallo, 'id' | 'tipoEdad'>, currentGalloId: string | null) => void;
+    onUpdateGallo: (galloData: Omit<Gallo, 'id' | 'tipoEdad'>, currentGalloId: string) => void;
+    onSaveMultipleGallos: (gallosData: Omit<Gallo, 'id' | 'tipoEdad'>[]) => void;
     onDeleteGallo: (galloId: string) => void;
     isMatchmaking: boolean;
 }
 
-const SetupScreen: React.FC<SetupScreenProps> = ({ cuerdas, gallos, torneo, onUpdateTorneo, onStartMatchmaking, showNotification, onSaveCuerda, onDeleteCuerda, onSaveGallo, onDeleteGallo, isMatchmaking }) => {
+const SetupScreen: React.FC<SetupScreenProps> = ({ cuerdas, gallos, torneo, onUpdateTorneo, onStartMatchmaking, showNotification, onSaveCuerda, onDeleteCuerda, onUpdateGallo, onSaveMultipleGallos, onDeleteGallo, isMatchmaking }) => {
     const [isCuerdaModalOpen, setCuerdaModalOpen] = useState(false);
     const [isGalloModalOpen, setGalloModalOpen] = useState(false);
     
     const [currentCuerda, setCurrentCuerda] = useState<Cuerda | null>(null);
     const [currentGallo, setCurrentGallo] = useState<Gallo | null>(null);
 
-    const handleSaveCuerdaClick = (cuerdaData: Omit<Cuerda, 'id' | 'baseCuerdaId'>, currentCuerdaId: string | null) => {
-        onSaveCuerda(cuerdaData, currentCuerdaId);
+    const handleSaveCuerdaClick = (data: { name: string; owner: string; fronts: number }, baseCuerdaId: string | null) => {
+        onSaveCuerda(data, baseCuerdaId);
         setCuerdaModalOpen(false);
     };
 
-    const handleSaveGalloClick = (galloData: Omit<Gallo, 'id' | 'tipoEdad'>) => {
-        onSaveGallo(galloData, currentGallo?.id || null);
+    const handleUpdateGalloClick = (galloData: Omit<Gallo, 'id' | 'tipoEdad'>, currentGalloId: string) => {
+        onUpdateGallo(galloData, currentGalloId);
         setGalloModalOpen(false);
     };
+    
+    const handleCloseGalloModal = useCallback(() => {
+        setGalloModalOpen(false);
+        setCurrentGallo(null);
+    }, []);
 
     const activeRoostersCount = gallos.length;
     
-    const baseCuerdas = useMemo(() => cuerdas.filter(c => !c.baseCuerdaId), [cuerdas]);
-    
     const groupedGallos = useMemo(() => {
-        const sortedCuerdas = [...cuerdas].sort((a,b) => a.name.localeCompare(b.name));
+        const sortedCuerdas = [...cuerdas].sort((a,b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
         const acc: Record<string, Gallo[]> = {};
         sortedCuerdas.forEach(c => {
             const cuerdaGallos = gallos.filter(gallo => gallo.cuerdaId === c.id);
@@ -497,6 +728,19 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ cuerdas, gallos, torneo, onUp
         document.body.classList.remove('printing-planilla');
     };
 
+    const handleOpenCuerdaModal = (cuerda: Cuerda | null) => {
+        setCurrentCuerda(cuerda);
+        setCuerdaModalOpen(true);
+    };
+
+    const handleOpenGalloModal = () => {
+        if (cuerdas.filter(c => !c.baseCuerdaId).length === 0) {
+            showNotification("Debe crear una cuerda primero antes de añadir gallos.", "error");
+        } else {
+            setCurrentGallo(null);
+            setGalloModalOpen(true);
+        }
+    };
 
     return (
         <div className="space-y-8 print-target">
@@ -573,20 +817,25 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ cuerdas, gallos, torneo, onUp
                             )}
                         </div>
                     </SectionCard>
-                    <SectionCard icon={<UsersIcon/>} title="Cuerdas" buttonText="Añadir" onButtonClick={() => {setCurrentCuerda(null); setCuerdaModalOpen(true)}}>
+                    <SectionCard icon={<UsersIcon/>} title="Cuerdas" buttonText="Añadir" onButtonClick={() => handleOpenCuerdaModal(null)}>
                         <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                             {cuerdas.length === 0 && <p className="text-gray-400 text-center py-4">No hay cuerdas registradas.</p>}
-                            {cuerdas.map(p => (
+                            {cuerdas.sort((a,b) => a.name.localeCompare(b.name, undefined, { numeric: true })).map(p => (
                                 <div key={p.id} className="flex justify-between items-center bg-gray-700/50 p-3 rounded-lg">
                                     <div>
                                         <p className="font-semibold text-white">{p.name}</p>
                                         <p className="text-sm text-gray-400">{p.owner}</p>
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                        <button onClick={() => { setCurrentCuerda(p); setCuerdaModalOpen(true); }} className="text-gray-400 hover:text-amber-400 transition-colors p-1">
+                                        <button onClick={() => handleOpenCuerdaModal(p)} className="text-gray-400 hover:text-amber-400 transition-colors p-1">
                                             <PencilIcon className="w-5 h-5"/>
                                         </button>
-                                        <button onClick={() => onDeleteCuerda(p.id)} className="text-gray-400 hover:text-red-500 transition-colors p-1">
+                                        <button 
+                                            onClick={() => onDeleteCuerda(p.id)} 
+                                            disabled={!!p.baseCuerdaId}
+                                            className="text-gray-400 hover:text-red-500 transition-colors p-1 disabled:text-gray-600 disabled:hover:text-gray-600 disabled:cursor-not-allowed"
+                                            title={p.baseCuerdaId ? "No se puede eliminar un frente directamente. Edite la cuerda base." : "Eliminar Cuerda"}
+                                        >
                                             <TrashIcon className="w-5 h-5"/>
                                         </button>
                                     </div>
@@ -596,7 +845,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ cuerdas, gallos, torneo, onUp
                     </SectionCard>
                 </div>
                 <div className="flex flex-col gap-8">
-                     <SectionCard icon={<RoosterIcon/>} title="Gallos Registrados" buttonText="Añadir Gallo" onButtonClick={() => {setCurrentGallo(null); setGalloModalOpen(true)}}>
+                     <SectionCard icon={<RoosterIcon/>} title="Gallos Registrados" buttonText="Añadir Gallo" onButtonClick={handleOpenGalloModal}>
                         <div className="space-y-4 max-h-[30rem] overflow-y-auto pr-2">
                             {Object.keys(groupedGallos).length === 0 && <p className="text-gray-400 text-center py-4">No hay gallos registrados.</p>}
                             {Object.entries(groupedGallos).map(([cuerdaName, gallosInGroup]) => (
@@ -669,8 +918,17 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ cuerdas, gallos, torneo, onUp
                 </button>
             </div>
             
-            <CuerdaFormModal isOpen={isCuerdaModalOpen} onClose={() => setCuerdaModalOpen(false)} onSave={handleSaveCuerdaClick} cuerda={currentCuerda} baseCuerdas={baseCuerdas} />
-            <GalloFormModal isOpen={isGalloModalOpen} onClose={() => setGalloModalOpen(false)} onSave={handleSaveGalloClick} gallo={currentGallo} cuerdas={cuerdas} globalWeightUnit={torneo.weightUnit} showNotification={showNotification} />
+            <CuerdaFormModal isOpen={isCuerdaModalOpen} onClose={() => setCuerdaModalOpen(false)} onSave={handleSaveCuerdaClick} cuerda={currentCuerda} allCuerdas={cuerdas} />
+            <GalloFormModal 
+                isOpen={isGalloModalOpen} 
+                onClose={handleCloseGalloModal} 
+                onUpdate={handleUpdateGalloClick} 
+                onSaveMultiple={onSaveMultipleGallos}
+                gallo={currentGallo} 
+                cuerdas={cuerdas} 
+                torneo={torneo}
+                showNotification={showNotification} 
+            />
             <div className="printable-planilla-container">
               <PrintablePlanilla torneo={torneo} />
             </div>

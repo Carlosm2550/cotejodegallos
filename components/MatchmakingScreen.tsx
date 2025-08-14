@@ -1,9 +1,3 @@
-
-
-
-
-
-
 import React, { useState } from 'react';
 import { MatchmakingResults, Torneo, Cuerda, Pelea, Gallo, PesoUnit, Notification } from '../types';
 import EditLeftoverGalloModal from './ConflictModal';
@@ -57,12 +51,12 @@ interface MatchmakingScreenProps {
     onStartTournament: () => void;
     onBack: () => void;
     onCreateManualFight: (roosterAId: string, roosterBId: string) => void;
-    onSaveGallo: (galloData: Omit<Gallo, 'id' | 'tipoEdad' | 'marca'>, currentGalloId: string | null) => void;
+    onUpdateGallo: (galloData: Omit<Gallo, 'id' | 'tipoEdad'>, currentGalloId: string) => void;
     onDeleteCuerda: (cuerdaId: string) => void;
     showNotification: (message: string, type: Notification['type']) => void;
 }
 
-const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, cuerdas, onStartTournament, onBack, onCreateManualFight, onSaveGallo, onDeleteCuerda, showNotification }) => {
+const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, cuerdas, onStartTournament, onBack, onCreateManualFight, onUpdateGallo, onDeleteCuerda, showNotification }) => {
     
     const [selectedRoosters, setSelectedRoosters] = useState<string[]>([]);
     const [isEditModalOpen, setEditModalOpen] = useState(false);
@@ -94,8 +88,8 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
         setEditModalOpen(true);
     };
 
-    const handleSaveGalloClick = (galloData: Omit<Gallo, 'id' | 'tipoEdad' | 'marca'>, currentGalloId: string) => {
-        onSaveGallo(galloData, currentGalloId);
+    const handleUpdateGalloClick = (galloData: Omit<Gallo, 'id' | 'tipoEdad'>, currentGalloId: string) => {
+        onUpdateGallo(galloData, currentGalloId);
     };
 
     const handleDeleteCuerdaClick = (cuerdaId: string) => {
@@ -285,7 +279,7 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
                     gallo={editingGallo}
                     cuerdas={cuerdas}
                     globalWeightUnit={torneo.weightUnit}
-                    onSave={handleSaveGalloClick}
+                    onUpdate={handleUpdateGalloClick}
                     onDeleteCuerda={handleDeleteCuerdaClick}
                     showNotification={showNotification}
                 />

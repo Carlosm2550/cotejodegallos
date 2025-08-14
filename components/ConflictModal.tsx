@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Gallo, Cuerda, PesoUnit, Notification, TipoGallo } from '../types';
 import Modal from './Modal';
@@ -31,7 +30,7 @@ const getWeightUnitAbbr = (unit: PesoUnit): string => {
 interface EditLeftoverGalloModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (galloData: Omit<Gallo, 'id' | 'tipoEdad' | 'marca'>, currentGalloId: string) => void;
+    onUpdate: (galloData: Omit<Gallo, 'id' | 'tipoEdad'>, currentGalloId: string) => void;
     onDeleteCuerda: (cuerdaId: string) => void;
     gallo: Gallo | null;
     cuerdas: Cuerda[];
@@ -42,7 +41,7 @@ interface EditLeftoverGalloModalProps {
 const EditLeftoverGalloModal: React.FC<EditLeftoverGalloModalProps> = ({
     isOpen,
     onClose,
-    onSave,
+    onUpdate,
     onDeleteCuerda,
     gallo,
     cuerdas,
@@ -56,6 +55,7 @@ const EditLeftoverGalloModal: React.FC<EditLeftoverGalloModalProps> = ({
     const [markingId, setMarkingId] = useState('');
     const [tipoGallo, setTipoGallo] = useState<TipoGallo>(TipoGallo.LISO);
     const [confirmDeleteCuerda, setConfirmDeleteCuerda] = useState(false);
+    const [marca, setMarca] = useState(0);
 
     const cuerda = useMemo(() => gallo ? cuerdas.find(c => c.id === gallo.cuerdaId) : null, [gallo, cuerdas]);
 
@@ -67,6 +67,7 @@ const EditLeftoverGalloModal: React.FC<EditLeftoverGalloModalProps> = ({
             setAgeMonths(gallo.ageMonths || 1);
             setMarkingId(gallo.markingId || '');
             setTipoGallo(gallo.tipoGallo || TipoGallo.LISO);
+            setMarca(gallo.marca || 0);
             setConfirmDeleteCuerda(false); // Reset on open
         }
     }, [isOpen, gallo]);
@@ -75,8 +76,8 @@ const EditLeftoverGalloModal: React.FC<EditLeftoverGalloModalProps> = ({
         e.preventDefault();
         if (!gallo) return;
         
-        onSave(
-            { ringId, color, cuerdaId: gallo.cuerdaId, weight, weightUnit: globalWeightUnit, ageMonths, markingId, tipoGallo },
+        onUpdate(
+            { ringId, color, cuerdaId: gallo.cuerdaId, weight, weightUnit: globalWeightUnit, ageMonths, markingId, tipoGallo, marca },
             gallo.id
         );
         onClose();

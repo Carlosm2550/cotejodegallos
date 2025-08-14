@@ -1,18 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Screen, Cuerda, Gallo, Pelea, Torneo, PesoUnit, Notification, MatchmakingResults, TipoGallo, TipoEdad } from './types';
 import { TrophyIcon, PlayIcon } from './components/Icons';
@@ -291,44 +276,106 @@ const App: React.FC = () => {
 
 
   // --- DATA HANDLERS ---
-   const handleSaveCuerda = (cuerdaData: Omit<Cuerda, 'id' | 'baseCuerdaId'>, currentCuerdaId: string | null) => {
-    if (currentCuerdaId) {
-        setCuerdas(prev => prev.map(p => p.id === currentCuerdaId ? { ...p, ...cuerdaData, id: p.id } : p));
-        showNotification('Cuerda actualizada.', 'success');
-    } else {
-         if (cuerdaData.name.startsWith('__FRONT__')) {
-            const baseCuerdaId = cuerdaData.name.replace('__FRONT__', '');
-            const baseCuerda = cuerdas.find(c => c.id === baseCuerdaId);
-            if (!baseCuerda) {
-                showNotification('Error: Cuerda base no encontrada.', 'error');
-                return;
+  const handleSaveCuerda = (cuerdaData: { name: string; owner: string; fronts: number }, baseCuerdaId: string | null) => {
+    if (baseCuerdaId) {
+        // --- EDITING ---
+        const baseCuerda = cuerdas.find(c => c.id === baseCuerdaId);
+        if (!baseCuerda) {
+            showNotification('Cuerda base no encontrada.', 'error');
+            return;
+        }
+
+        const existingFronts = cuerdas.filter(c => c.baseCuerdaId === baseCuerda.id);
+        const currentTotalEntries = 1 + existingFronts.length;
+        const desiredTotalEntries = cuerdaData.fronts;
+
+        let updatedCuerdas = [...cuerdas];
+        let updatedGallos = [...gallos];
+
+        // Update base cuerda and its existing fronts' info
+        updatedCuerdas = updatedCuerdas.map(c => {
+            if (c.id === baseCuerda.id) {
+                return { ...c, name: cuerdaData.name, owner: cuerdaData.owner };
             }
+            if (c.baseCuerdaId === baseCuerda.id) {
+                const frontNumberMatch = c.name.match(/\((\d+)\)$/);
+                const frontNumber = frontNumberMatch ? frontNumberMatch[1] : '';
+                return { ...c, owner: cuerdaData.owner, name: `${cuerdaData.name} (${frontNumber})` };
+            }
+            return c;
+        });
 
-            const baseName = baseCuerda.name;
-            const frontCount = cuerdas.filter(c => c.id === baseCuerdaId || c.baseCuerdaId === baseCuerdaId).length;
-            const newFrontNumber = frontCount + 1;
+        if (desiredTotalEntries > currentTotalEntries) {
+            // Add new fronts
+            for (let i = currentTotalEntries; i < desiredTotalEntries; i++) {
+                const newFrontCuerda: Cuerda = {
+                    id: `cuerda-${Date.now()}-${Math.random()}`,
+                    name: `${cuerdaData.name} (${i + 1})`,
+                    owner: cuerdaData.owner,
+                    baseCuerdaId: baseCuerda.id,
+                };
+                updatedCuerdas.push(newFrontCuerda);
+            }
+            showNotification(`${desiredTotalEntries - currentTotalEntries} frente(s) añadido(s).`, 'success');
+        } else if (desiredTotalEntries < currentTotalEntries) {
+            // Remove fronts
+            const frontsToRemoveCount = currentTotalEntries - desiredTotalEntries;
+            const sortedFronts = existingFronts.sort((a, b) => {
+                const numA = parseInt(a.name.match(/\((\d+)\)$/)?.[1] || '0', 10);
+                const numB = parseInt(b.name.match(/\((\d+)\)$/)?.[1] || '0', 10);
+                return numB - numA;
+            });
 
+            const frontsToRemove = sortedFronts.slice(0, frontsToRemoveCount);
+            const frontIdsToRemove = frontsToRemove.map(f => f.id);
+            
+            updatedCuerdas = updatedCuerdas.filter(c => !frontIdsToRemove.includes(c.id));
+            
+            const gallosInRemovedFronts = updatedGallos.filter(g => frontIdsToRemove.includes(g.cuerdaId)).length;
+            updatedGallos = updatedGallos.filter(g => !frontIdsToRemove.includes(g.cuerdaId));
+            
+            showNotification(`Se eliminaron ${frontsToRemove.length} frente(s) y ${gallosInRemovedFronts} gallo(s) asociado(s).`, 'success');
+        }
+
+        setCuerdas(updatedCuerdas);
+        setGallos(updatedGallos);
+        showNotification(`Cuerda '${cuerdaData.name}' actualizada.`, 'success');
+    } else {
+        // --- CREATING ---
+        const { name, owner, fronts } = cuerdaData;
+        if (cuerdas.some(c => c.name === name && !c.baseCuerdaId)) {
+            showNotification('Ya existe una cuerda con ese nombre.', 'error');
+            return;
+        }
+
+        const newCuerdasList: Cuerda[] = [];
+        const newBaseCuerda: Cuerda = {
+            id: `cuerda-${Date.now()}-${Math.random()}`,
+            name,
+            owner,
+        };
+        newCuerdasList.push(newBaseCuerda);
+
+        for (let i = 1; i < fronts; i++) {
             const newFrontCuerda: Cuerda = {
                 id: `cuerda-${Date.now()}-${Math.random()}`,
-                name: `${baseName} (${newFrontNumber})`,
-                owner: baseCuerda.owner,
-                baseCuerdaId: baseCuerdaId,
+                name: `${name} (${i + 1})`,
+                owner,
+                baseCuerdaId: newBaseCuerda.id,
             };
-            setCuerdas(prev => [...prev, newFrontCuerda]);
-            showNotification(`Frente '${newFrontCuerda.name}' añadido.`, 'success');
-
-        } else {
-            const newCuerda: Cuerda = { ...cuerdaData, id: `cuerda-${Date.now()}-${Math.random()}` };
-            setCuerdas(prev => [...prev, newCuerda]);
-            showNotification('Cuerda añadida.', 'success');
+            newCuerdasList.push(newFrontCuerda);
         }
+        
+        setCuerdas(prev => [...prev, ...newCuerdasList]);
+        showNotification(`Cuerda '${name}' con ${fronts} frente(s) creada.`, 'success');
     }
   };
 
+
   const handleDeleteCuerda = (cuerdaId: string) => {
-      const isBaseCuerda = cuerdas.some(c => c.baseCuerdaId === cuerdaId);
-      if (isBaseCuerda) {
-          showNotification('No se puede eliminar una cuerda que tiene frentes. Elimine los frentes primero.', 'error');
+      const isBaseCuerdaWithFronts = cuerdas.some(c => c.baseCuerdaId === cuerdaId);
+      if (isBaseCuerdaWithFronts) {
+          showNotification('No se puede eliminar una cuerda que tiene frentes. Edite la cuerda y reduzca el número de frentes a 1 primero.', 'error');
           return;
       }
       setCuerdas(prev => prev.filter(p => p.id !== cuerdaId));
@@ -348,38 +395,43 @@ const App: React.FC = () => {
       showNotification('Cuerda y sus gallos eliminados.', 'success');
   };
 
-  const handleSaveGallo = (galloData: Omit<Gallo, 'id' | 'tipoEdad'>, currentGalloId: string | null) => {
-    
-    // Derive tipoEdad from ageMonths
+  const handleUpdateGallo = (galloData: Omit<Gallo, 'id' | 'tipoEdad'>, currentGalloId: string) => {
     const tipoEdad = galloData.ageMonths < 12 ? TipoEdad.POLLO : TipoEdad.GALLO;
     const finalGalloData = { ...galloData, tipoEdad };
     
-    if (currentGalloId) {
-        const updatedGallos = gallos.map(g => g.id === currentGalloId ? { ...finalGalloData, id: g.id } : g);
-        setGallos(updatedGallos);
-        
-        // Also update matchmakingResults if it exists
-        if (matchmakingResults) {
-            setMatchmakingResults(prev => {
-                if (!prev) return null;
-                return {
-                    ...prev,
-                    unpairedRoosters: prev.unpairedRoosters.map(g => {
-                        if (g.id === currentGalloId) {
-                            return { ...finalGalloData, id: g.id };
-                        }
-                        return g;
-                    })
-                };
-            });
-        }
-        
-        showNotification('Gallo actualizado.', 'success');
-    } else {
-        const newGallo = { ...finalGalloData, id: `gallo-${Date.now()}-${Math.random()}` };
-        setGallos(prev => [...prev, newGallo]);
-        showNotification('Gallo añadido.', 'success');
+    const updatedGallos = gallos.map(g => g.id === currentGalloId ? { ...finalGalloData, id: g.id } : g);
+    setGallos(updatedGallos);
+    
+    // Also update matchmakingResults if it exists
+    if (matchmakingResults) {
+        setMatchmakingResults(prev => {
+            if (!prev) return null;
+            return {
+                ...prev,
+                unpairedRoosters: prev.unpairedRoosters.map(g => {
+                    if (g.id === currentGalloId) {
+                        return { ...finalGalloData, id: g.id };
+                    }
+                    return g;
+                })
+            };
+        });
     }
+    
+    showNotification('Gallo actualizado.', 'success');
+  };
+
+  const handleSaveMultipleGallos = (gallosData: Omit<Gallo, 'id' | 'tipoEdad'>[]) => {
+      const newGallos = gallosData.map(galloData => {
+          const tipoEdad = galloData.ageMonths < 12 ? TipoEdad.POLLO : TipoEdad.GALLO;
+          return {
+              ...galloData,
+              tipoEdad,
+              id: `gallo-${Date.now()}-${Math.random()}`
+          };
+      });
+      setGallos(prev => [...prev, ...newGallos]);
+      showNotification(`${newGallos.length} gallo(s) añadido(s) correctamente.`, 'success');
   };
   
   const handleDeleteGallo = (galloId: string) => {
@@ -555,7 +607,7 @@ const App: React.FC = () => {
                       setCurrentScreen(Screen.SETUP);
                     }}
                     onCreateManualFight={handleCreateManualFight}
-                    onSaveGallo={handleSaveGallo}
+                    onUpdateGallo={handleUpdateGallo}
                     onDeleteCuerda={handleDeleteCuerda}
                     showNotification={showNotification}
                /> : null;
@@ -625,8 +677,9 @@ const App: React.FC = () => {
                 showNotification={showNotification}
                 onSaveCuerda={handleSaveCuerda}
                 onDeleteCuerda={handleDeleteCuerda}
-                onSaveGallo={handleSaveGallo}
+                onUpdateGallo={handleUpdateGallo}
                 onDeleteGallo={handleDeleteGallo}
+                onSaveMultipleGallos={handleSaveMultipleGallos}
                 isMatchmaking={isMatchmaking}
                />;
     }
