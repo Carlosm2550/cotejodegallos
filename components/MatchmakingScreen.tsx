@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { MatchmakingResults, Torneo, Cuerda, Pelea, Gallo, PesoUnit } from '../types';
 import EditLeftoverGalloModal from './ConflictModal';
@@ -194,8 +195,16 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
 
                                     if (selectedRoosters.length >= 2 && !isSelected) {
                                         isDisabled = true;
-                                    } else if (selectedGallo && (selectedGallo.cuerdaId === gallo.cuerdaId || selectedGallo.tipoGallo !== gallo.tipoGallo || selectedGallo.tipoEdad !== gallo.tipoEdad) && !isSelected) {
-                                        isDisabled = true;
+                                    } else if (selectedGallo && !isSelected) {
+                                        const cuerdaOfSelected = cuerdas.find(c => c.id === selectedGallo.cuerdaId);
+                                        const cuerdaOfCurrent = cuerdas.find(c => c.id === gallo.cuerdaId);
+
+                                        const baseIdOfSelected = cuerdaOfSelected?.baseCuerdaId || cuerdaOfSelected?.id;
+                                        const baseIdOfCurrent = cuerdaOfCurrent?.baseCuerdaId || cuerdaOfCurrent?.id;
+                                        
+                                        if ((baseIdOfSelected && baseIdOfSelected === baseIdOfCurrent) || selectedGallo.tipoEdad !== gallo.tipoEdad) {
+                                            isDisabled = true;
+                                        }
                                     }
                                     
                                     const weightInGrams = convertToGrams(gallo.weight, gallo.weightUnit);

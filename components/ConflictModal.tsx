@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Gallo, Cuerda, PesoUnit, TipoGallo } from '../types';
 import Modal from './Modal';
@@ -125,7 +126,7 @@ const EditLeftoverGalloModal: React.FC<EditLeftoverGalloModalProps> = ({
                             className="w-5 h-5 rounded text-red-600 bg-gray-900 border-gray-500 focus:ring-red-500 focus:ring-offset-gray-800"
                         />
                          <span className="text-sm text-gray-300">
-                             Deseas eliminar a Cuerda <span className="font-bold text-red-400">{cuerda?.name}</span> y todos sus gallos.
+                             Confirmas que deseas eliminar la cuerda <span className="font-bold text-red-400">{cuerda?.name}</span>. Esto eliminará a todos sus gallos, incluyendo a <span className="font-bold text-white">{gallo?.color}</span>, del torneo. Esta acción no se puede deshacer.
                          </span>
                      </label>
                 </div>

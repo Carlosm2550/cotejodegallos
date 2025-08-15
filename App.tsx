@@ -2,11 +2,11 @@
 
 
 
+
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Screen, Cuerda, Gallo, Pelea, Torneo, PesoUnit, MatchmakingResults, TipoGallo, TipoEdad } from './types';
 import { TrophyIcon, PlayIcon } from './components/Icons';
 
-import { DEMO_GALLERAS } from './constants';
 import SetupScreen from './components/SetupScreen';
 import MatchmakingScreen from './components/MatchmakingScreen';
 import LiveFightScreen from './components/LiveFightScreen';
@@ -170,72 +170,6 @@ const App: React.FC = () => {
   const [tournamentPhase, setTournamentPhase] = useState<'main' | 'individual' | 'finished'>('main');
   const [isDataLoaded, setDataLoaded] = useState(false);
 
-    const populateInitialLocalData = useCallback(() => {
-        console.log("Cargando datos de demostración.");
-        const newCuerdas: Cuerda[] = [];
-        const newGallos: Gallo[] = [];
-        const baseCuerdaMap = new Map<string, { id: string, owner: string }>();
-
-        DEMO_GALLERAS.forEach((data: any) => {
-            const cuerdaName = data["Nombre de la cuerda"];
-            const owner = data["Dueño"];
-            const isFrontMatch = cuerdaName.match(/^(.*)\s\((\d+)\)$/);
-            let newCuerda: Cuerda;
-            const cuerdaId = `cuerda-${Date.now()}-${Math.random()}`;
-
-            if (isFrontMatch) {
-                const baseName = isFrontMatch[1].trim();
-                const baseCuerdaInfo = baseCuerdaMap.get(baseName);
-                
-                if (!baseCuerdaInfo) {
-                    console.error(`Cuerda base '${baseName}' no encontrada para el frente '${cuerdaName}'. Asegúrate de que las cuerdas base aparezcan antes que sus frentes en los datos.`);
-                    newCuerda = {
-                        id: cuerdaId,
-                        name: cuerdaName,
-                        owner: owner,
-                    };
-                } else {
-                    newCuerda = {
-                        id: cuerdaId,
-                        name: cuerdaName,
-                        owner: baseCuerdaInfo.owner,
-                        baseCuerdaId: baseCuerdaInfo.id,
-                    };
-                }
-            } else {
-                newCuerda = {
-                    id: cuerdaId,
-                    name: cuerdaName,
-                    owner: owner,
-                };
-                baseCuerdaMap.set(cuerdaName, { id: newCuerda.id, owner: newCuerda.owner });
-            }
-
-            newCuerdas.push(newCuerda);
-
-            data.Gallos.forEach((galloData: any) => {
-                 const tipoEdad = galloData["clase"] === 'pollo' ? TipoEdad.POLLO : TipoEdad.GALLO;
-
-                newGallos.push({
-                    id: `gallo-${Date.now()}-${Math.random()}`,
-                    ringId: galloData["ID del Anillo"],
-                    color: galloData["Color del Gallo"],
-                    cuerdaId: newCuerda.id,
-                    weight: galloData["Peso (lb)"],
-                    weightUnit: PesoUnit.POUNDS,
-                    ageMonths: galloData["meses de edad"],
-                    markingId: galloData["ID de Marcaje"],
-                    tipoGallo: galloData["tipo de gallo"] === 'pava' ? TipoGallo.PAVA : TipoGallo.LISO,
-                    tipoEdad,
-                    marca: galloData["Marca"],
-                });
-            });
-        });
-
-        setCuerdas(newCuerdas);
-        setGallos(newGallos);
-    }, []);
-
   // Load data from localStorage on mount
   useEffect(() => {
     try {
@@ -247,15 +181,12 @@ const App: React.FC = () => {
             setCuerdas(JSON.parse(savedCuerdas));
             setGallos(JSON.parse(savedGallos));
             setTorneo(JSON.parse(savedTorneo));
-        } else {
-            populateInitialLocalData();
         }
     } catch (error) {
         console.error("Failed to load data from local storage", error);
-        populateInitialLocalData();
     }
     setDataLoaded(true);
-  }, [populateInitialLocalData]);
+  }, []);
 
   // Save data to localStorage on change
   useEffect(() => {
@@ -471,8 +402,14 @@ const App: React.FC = () => {
             return;
         }
 
-        if (roosterA.cuerdaId === roosterB.cuerdaId) {
-             console.error("No se pueden emparejar gallos de la misma cuerda.");
+        const cuerdaA = cuerdas.find(c => c.id === roosterA.cuerdaId);
+        const cuerdaB = cuerdas.find(c => c.id === roosterB.cuerdaId);
+
+        const baseIdA = cuerdaA?.baseCuerdaId || cuerdaA?.id;
+        const baseIdB = cuerdaB?.baseCuerdaId || cuerdaB?.id;
+
+        if (baseIdA && baseIdB && baseIdA === baseIdB) {
+             console.error("No se pueden emparejar gallos de la misma cuerda base.");
              return;
         }
 
@@ -495,7 +432,7 @@ const App: React.FC = () => {
                 unpairedRoosters: updatedUnpaired,
             };
         });
-    }, [matchmakingResults]);
+    }, [matchmakingResults, cuerdas]);
 
   const handleFinishFight = useCallback((fightId: string, winner: 'A' | 'B' | 'DRAW', duration: number) => {
       setMatchmakingResults(prev => {
@@ -625,7 +562,7 @@ const App: React.FC = () => {
   if (!isDataLoaded) {
     return (
         <div className="swirl-bg min-h-screen flex justify-center items-center">
-            <svg className="animate-spin h-10 w-10 text-amber-500" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin h-10 w-10 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
