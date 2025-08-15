@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { MatchmakingResults, Torneo, Cuerda, Pelea, Gallo, PesoUnit, Notification } from '../types';
+import { MatchmakingResults, Torneo, Cuerda, Pelea, Gallo, PesoUnit } from '../types';
 import EditLeftoverGalloModal from './ConflictModal';
 import { PencilIcon, WarningIcon } from './Icons';
 
@@ -53,10 +54,9 @@ interface MatchmakingScreenProps {
     onCreateManualFight: (roosterAId: string, roosterBId: string) => void;
     onUpdateGallo: (galloData: Omit<Gallo, 'id' | 'tipoEdad'>, currentGalloId: string) => void;
     onDeleteCuerda: (cuerdaId: string) => void;
-    showNotification: (message: string, type: Notification['type']) => void;
 }
 
-const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, cuerdas, onStartTournament, onBack, onCreateManualFight, onUpdateGallo, onDeleteCuerda, showNotification }) => {
+const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, cuerdas, onStartTournament, onBack, onCreateManualFight, onUpdateGallo, onDeleteCuerda }) => {
     
     const [selectedRoosters, setSelectedRoosters] = useState<string[]>([]);
     const [isEditModalOpen, setEditModalOpen] = useState(false);
@@ -281,7 +281,6 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
                     globalWeightUnit={torneo.weightUnit}
                     onUpdate={handleUpdateGalloClick}
                     onDeleteCuerda={handleDeleteCuerdaClick}
-                    showNotification={showNotification}
                 />
             )}
         </div>

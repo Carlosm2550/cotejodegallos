@@ -1,7 +1,10 @@
+
+
+
+
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { Screen, Cuerda, Gallo, Pelea, Torneo, PesoUnit, Notification, MatchmakingResults, TipoGallo, TipoEdad } from './types';
+import { Screen, Cuerda, Gallo, Pelea, Torneo, PesoUnit, MatchmakingResults, TipoGallo, TipoEdad } from './types';
 import { TrophyIcon, PlayIcon } from './components/Icons';
-import Toaster from './components/Toaster';
 
 import { DEMO_GALLERAS } from './constants';
 import SetupScreen from './components/SetupScreen';
@@ -138,6 +141,11 @@ const Footer: React.FC = () => (
   </footer>
 );
 
+export interface CuerdaFormData {
+  name: string;
+  owner: string;
+  frontCount?: number;
+}
 
 // --- MAIN APP COMPONENT ---
 const App: React.FC = () => {
@@ -162,18 +170,8 @@ const App: React.FC = () => {
   const [tournamentPhase, setTournamentPhase] = useState<'main' | 'individual' | 'finished'>('main');
   const [isDataLoaded, setDataLoaded] = useState(false);
 
-  // Notifications
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const showNotification = useCallback((message: string, type: Notification['type'] = 'info') => {
-    const id = Date.now();
-    setNotifications(prev => [...prev, { id, message, type }]);
-    setTimeout(() => {
-        setNotifications(prev => prev.filter(n => n.id !== id));
-    }, 5000);
-  }, []);
-
     const populateInitialLocalData = useCallback(() => {
-        showNotification("Cargando datos de demostración.", 'info');
+        console.log("Cargando datos de demostración.");
         const newCuerdas: Cuerda[] = [];
         const newGallos: Gallo[] = [];
         const baseCuerdaMap = new Map<string, { id: string, owner: string }>();
@@ -236,7 +234,7 @@ const App: React.FC = () => {
 
         setCuerdas(newCuerdas);
         setGallos(newGallos);
-    }, [showNotification]);
+    }, []);
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -249,7 +247,6 @@ const App: React.FC = () => {
             setCuerdas(JSON.parse(savedCuerdas));
             setGallos(JSON.parse(savedGallos));
             setTorneo(JSON.parse(savedTorneo));
-            showNotification("Datos cargados desde la sesión anterior.", "success");
         } else {
             populateInitialLocalData();
         }
@@ -270,118 +267,55 @@ const App: React.FC = () => {
         localStorage.setItem('galleraPro_torneo', JSON.stringify(torneo));
     } catch (error) {
         console.error("Failed to save data to local storage", error);
-        showNotification("Error al guardar los datos en el navegador.", "error");
     }
   }, [cuerdas, gallos, torneo, isDataLoaded]);
 
 
   // --- DATA HANDLERS ---
-  const handleSaveCuerda = (cuerdaData: { name: string; owner: string; fronts: number }, baseCuerdaId: string | null) => {
-    if (baseCuerdaId) {
-        // --- EDITING ---
-        const baseCuerda = cuerdas.find(c => c.id === baseCuerdaId);
-        if (!baseCuerda) {
-            showNotification('Cuerda base no encontrada.', 'error');
+  const handleSaveCuerda = useCallback((cuerdaData: CuerdaFormData, currentCuerdaId: string | null) => {
+    if (currentCuerdaId) { // Editing
+        setCuerdas(prev => prev.map(p => p.id === currentCuerdaId ? { ...p, name: cuerdaData.name, owner: cuerdaData.owner } : p));
+    } else { // Adding new
+        const baseNameExists = cuerdas.some(c => c.name.startsWith(cuerdaData.name + " (F"));
+        if (baseNameExists) {
+            console.error('Ya existe una cuerda con ese nombre base.');
             return;
         }
 
-        const existingFronts = cuerdas.filter(c => c.baseCuerdaId === baseCuerda.id);
-        const currentTotalEntries = 1 + existingFronts.length;
-        const desiredTotalEntries = cuerdaData.fronts;
+        const frontCount = cuerdaData.frontCount || 1;
+        const newCuerdas: Cuerda[] = [];
+        const timestamp = Date.now();
 
-        let updatedCuerdas = [...cuerdas];
-        let updatedGallos = [...gallos];
-
-        // Update base cuerda and its existing fronts' info
-        updatedCuerdas = updatedCuerdas.map(c => {
-            if (c.id === baseCuerda.id) {
-                return { ...c, name: cuerdaData.name, owner: cuerdaData.owner };
-            }
-            if (c.baseCuerdaId === baseCuerda.id) {
-                const frontNumberMatch = c.name.match(/\((\d+)\)$/);
-                const frontNumber = frontNumberMatch ? frontNumberMatch[1] : '';
-                return { ...c, owner: cuerdaData.owner, name: `${cuerdaData.name} (${frontNumber})` };
-            }
-            return c;
-        });
-
-        if (desiredTotalEntries > currentTotalEntries) {
-            // Add new fronts
-            for (let i = currentTotalEntries; i < desiredTotalEntries; i++) {
-                const newFrontCuerda: Cuerda = {
-                    id: `cuerda-${Date.now()}-${Math.random()}`,
-                    name: `${cuerdaData.name} (${i + 1})`,
-                    owner: cuerdaData.owner,
-                    baseCuerdaId: baseCuerda.id,
-                };
-                updatedCuerdas.push(newFrontCuerda);
-            }
-            showNotification(`${desiredTotalEntries - currentTotalEntries} frente(s) añadido(s).`, 'success');
-        } else if (desiredTotalEntries < currentTotalEntries) {
-            // Remove fronts
-            const frontsToRemoveCount = currentTotalEntries - desiredTotalEntries;
-            const sortedFronts = existingFronts.sort((a, b) => {
-                const numA = parseInt(a.name.match(/\((\d+)\)$/)?.[1] || '0', 10);
-                const numB = parseInt(b.name.match(/\((\d+)\)$/)?.[1] || '0', 10);
-                return numB - numA;
-            });
-
-            const frontsToRemove = sortedFronts.slice(0, frontsToRemoveCount);
-            const frontIdsToRemove = frontsToRemove.map(f => f.id);
-            
-            updatedCuerdas = updatedCuerdas.filter(c => !frontIdsToRemove.includes(c.id));
-            
-            const gallosInRemovedFronts = updatedGallos.filter(g => frontIdsToRemove.includes(g.cuerdaId)).length;
-            updatedGallos = updatedGallos.filter(g => !frontIdsToRemove.includes(g.cuerdaId));
-            
-            showNotification(`Se eliminaron ${frontsToRemove.length} frente(s) y ${gallosInRemovedFronts} gallo(s) asociado(s).`, 'success');
-        }
-
-        setCuerdas(updatedCuerdas);
-        setGallos(updatedGallos);
-        showNotification(`Cuerda '${cuerdaData.name}' actualizada.`, 'success');
-    } else {
-        // --- CREATING ---
-        const { name, owner, fronts } = cuerdaData;
-        if (cuerdas.some(c => c.name === name && !c.baseCuerdaId)) {
-            showNotification('Ya existe una cuerda con ese nombre.', 'error');
-            return;
-        }
-
-        const newCuerdasList: Cuerda[] = [];
-        const newBaseCuerda: Cuerda = {
-            id: `cuerda-${Date.now()}-${Math.random()}`,
-            name,
-            owner,
+        const baseCuerda: Cuerda = {
+            id: `cuerda-${timestamp}-0`,
+            name: `${cuerdaData.name} (F1)`,
+            owner: cuerdaData.owner,
         };
-        newCuerdasList.push(newBaseCuerda);
+        newCuerdas.push(baseCuerda);
 
-        for (let i = 1; i < fronts; i++) {
-            const newFrontCuerda: Cuerda = {
-                id: `cuerda-${Date.now()}-${Math.random()}`,
-                name: `${name} (${i + 1})`,
-                owner,
-                baseCuerdaId: newBaseCuerda.id,
+        for (let i = 1; i < frontCount; i++) {
+            const frontCuerda: Cuerda = {
+                id: `cuerda-${timestamp}-${i}`,
+                name: `${cuerdaData.name} (F${i + 1})`,
+                owner: cuerdaData.owner,
+                baseCuerdaId: baseCuerda.id,
             };
-            newCuerdasList.push(newFrontCuerda);
+            newCuerdas.push(frontCuerda);
         }
-        
-        setCuerdas(prev => [...prev, ...newCuerdasList]);
-        showNotification(`Cuerda '${name}' con ${fronts} frente(s) creada.`, 'success');
+        setCuerdas(prev => [...prev, ...newCuerdas]);
     }
-  };
+  }, [cuerdas]);
 
 
-  const handleDeleteCuerda = (cuerdaId: string) => {
+  const handleDeleteCuerda = useCallback((cuerdaId: string) => {
       const isBaseCuerdaWithFronts = cuerdas.some(c => c.baseCuerdaId === cuerdaId);
       if (isBaseCuerdaWithFronts) {
-          showNotification('No se puede eliminar una cuerda que tiene frentes. Edite la cuerda y reduzca el número de frentes a 1 primero.', 'error');
+          console.error('No se puede eliminar una cuerda que tiene frentes. Elimine los frentes primero.');
           return;
       }
       setCuerdas(prev => prev.filter(p => p.id !== cuerdaId));
       setGallos(prev => prev.filter(g => g.cuerdaId !== cuerdaId));
       
-      // Also update matchmakingResults if it exists
       if (matchmakingResults) {
         setMatchmakingResults(prev => {
             if (!prev) return null;
@@ -391,38 +325,37 @@ const App: React.FC = () => {
             };
         });
       }
+  }, [cuerdas, matchmakingResults]);
 
-      showNotification('Cuerda y sus gallos eliminados.', 'success');
-  };
-
-  const handleUpdateGallo = (galloData: Omit<Gallo, 'id' | 'tipoEdad'>, currentGalloId: string) => {
+  const handleSaveGallo = useCallback((galloData: Omit<Gallo, 'id' | 'tipoEdad'>, currentGalloId: string | null) => {
     const tipoEdad = galloData.ageMonths < 12 ? TipoEdad.POLLO : TipoEdad.GALLO;
     const finalGalloData = { ...galloData, tipoEdad };
     
-    const updatedGallos = gallos.map(g => g.id === currentGalloId ? { ...finalGalloData, id: g.id } : g);
-    setGallos(updatedGallos);
-    
-    // Also update matchmakingResults if it exists
-    if (matchmakingResults) {
-        setMatchmakingResults(prev => {
-            if (!prev) return null;
-            return {
-                ...prev,
-                unpairedRoosters: prev.unpairedRoosters.map(g => {
-                    if (g.id === currentGalloId) {
-                        return { ...finalGalloData, id: g.id };
-                    }
-                    return g;
-                })
-            };
-        });
+    if (currentGalloId) {
+        setGallos(prev => prev.map(g => g.id === currentGalloId ? { ...finalGalloData, id: g.id } : g));
+        
+        if (matchmakingResults) {
+            setMatchmakingResults(prev => {
+                if (!prev) return null;
+                return {
+                    ...prev,
+                    unpairedRoosters: prev.unpairedRoosters.map(g => {
+                        if (g.id === currentGalloId) {
+                            return { ...finalGalloData, id: g.id };
+                        }
+                        return g;
+                    })
+                };
+            });
+        }
+    } else {
+        const newGallo = { ...finalGalloData, id: `gallo-${Date.now()}-${Math.random()}` };
+        setGallos(prev => [...prev, newGallo]);
     }
-    
-    showNotification('Gallo actualizado.', 'success');
-  };
+  }, [matchmakingResults]);
 
-  const handleSaveMultipleGallos = (gallosData: Omit<Gallo, 'id' | 'tipoEdad'>[]) => {
-      const newGallos = gallosData.map(galloData => {
+  const handleAddBulkGallos = useCallback((gallosToAdd: (Omit<Gallo, 'id' | 'tipoEdad'>)[]) => {
+      const newGallosWithIds = gallosToAdd.map(galloData => {
           const tipoEdad = galloData.ageMonths < 12 ? TipoEdad.POLLO : TipoEdad.GALLO;
           return {
               ...galloData,
@@ -430,30 +363,26 @@ const App: React.FC = () => {
               id: `gallo-${Date.now()}-${Math.random()}`
           };
       });
-      setGallos(prev => [...prev, ...newGallos]);
-      showNotification(`${newGallos.length} gallo(s) añadido(s) correctamente.`, 'success');
-  };
+      setGallos(prev => [...prev, ...newGallosWithIds]);
+  }, []);
   
-  const handleDeleteGallo = (galloId: string) => {
+  const handleDeleteGallo = useCallback((galloId: string) => {
       setGallos(prev => prev.filter(g => g.id !== galloId));
-      showNotification('Gallo eliminado.', 'success');
-  };
+  }, []);
   
-  const handleUpdateTorneo = (updatedTorneo: Torneo) => {
+  const handleUpdateTorneo = useCallback((updatedTorneo: Torneo) => {
       setTorneo(updatedTorneo);
-  };
+  }, []);
 
-    const handleStartMatchmaking = async () => {
+    const handleStartMatchmaking = useCallback(() => {
         if (gallos.length < 2) {
-            showNotification("Se necesitan al menos 2 gallos para empezar.", 'error');
+            console.warn("Se necesitan al menos 2 gallos para empezar.");
             return;
         }
         setIsMatchmaking(true);
     
         setTimeout(() => {
             try {
-                // Pre-filter roosters that are outside the allowed weight range.
-                // These will go directly to the leftovers list.
                 const roostersWithinWeight = gallos.filter(g => {
                     const weightInGrams = convertToGrams(g.weight, g.weightUnit);
                     return weightInGrams >= torneo.minWeight && weightInGrams <= torneo.maxWeight;
@@ -462,7 +391,7 @@ const App: React.FC = () => {
 
                 if (roostersOutsideWeight.length > 0) {
                     const names = roostersOutsideWeight.map(r => r.color).join(', ');
-                    showNotification(`Gallos con peso fuera de rango enviados a sobrantes: ${names}`, 'info');
+                    console.log(`Gallos con peso fuera de rango enviados a sobrantes: ${names}`);
                 }
 
                 let mainFights: Pelea[] = [];
@@ -482,11 +411,11 @@ const App: React.FC = () => {
 
                     if (nonCompliantCuerdas.length > 0) {
                         const teamNames = nonCompliantCuerdas.map(c => c.name).join(', ');
-                        showNotification(`Equipos no aptos para rondas (no tienen ${roosterCountPerTeam} gallos con peso válido): ${teamNames}. Pasan a sobrantes.`, 'info');
+                        console.log(`Equipos no aptos para rondas (no tienen ${roosterCountPerTeam} gallos con peso válido): ${teamNames}. Pasan a sobrantes.`);
                     }
 
                     if (compliantCuerdas.length < 2) {
-                        showNotification("Se necesitan al menos 2 equipos con la cantidad exacta de gallos y peso válido para el torneo por rondas.", 'error');
+                        console.warn("Se necesitan al menos 2 equipos con la cantidad exacta de gallos y peso válido para el torneo por rondas.");
                         setIsMatchmaking(false);
                         return;
                     }
@@ -525,26 +454,25 @@ const App: React.FC = () => {
     
             } catch (error) {
                 console.error("Error during matchmaking:", error);
-                showNotification("Ocurrió un error inesperado durante el cotejo.", "error");
             } finally {
                 setIsMatchmaking(false);
             }
         }, 50);
-    };
+    }, [gallos, torneo, cuerdas]);
 
-    const handleCreateManualFight = (roosterAId: string, roosterBId: string) => {
+    const handleCreateManualFight = useCallback((roosterAId: string, roosterBId: string) => {
         if (!matchmakingResults) return;
 
         const roosterA = matchmakingResults.unpairedRoosters.find(r => r.id === roosterAId);
         const roosterB = matchmakingResults.unpairedRoosters.find(r => r.id === roosterBId);
 
         if (!roosterA || !roosterB) {
-            showNotification("Uno o ambos gallos seleccionados no se encontraron en la lista de sobrantes.", "error");
+            console.error("Uno o ambos gallos seleccionados no se encontraron en la lista de sobrantes.");
             return;
         }
 
         if (roosterA.cuerdaId === roosterB.cuerdaId) {
-             showNotification("No se pueden emparejar gallos de la misma cuerda.", "error");
+             console.error("No se pueden emparejar gallos de la misma cuerda.");
              return;
         }
 
@@ -567,10 +495,9 @@ const App: React.FC = () => {
                 unpairedRoosters: updatedUnpaired,
             };
         });
-        showNotification(`Pelea creada: ${roosterA.color} vs ${roosterB.color}`, "success");
-    };
+    }, [matchmakingResults]);
 
-  const handleFinishFight = (fightId: string, winner: 'A' | 'B' | 'DRAW', duration: number) => {
+  const handleFinishFight = useCallback((fightId: string, winner: 'A' | 'B' | 'DRAW', duration: number) => {
       setMatchmakingResults(prev => {
         if (!prev) return null;
         
@@ -583,13 +510,13 @@ const App: React.FC = () => {
             individualFights: updateFights(prev.individualFights),
         };
     });
-  };
+  }, []);
   
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setCurrentScreen(Screen.SETUP);
     setMatchmakingResults(null);
     setTournamentPhase('main');
-  };
+  }, []);
 
   const renderScreen = () => {
     switch(currentScreen) {
@@ -607,9 +534,8 @@ const App: React.FC = () => {
                       setCurrentScreen(Screen.SETUP);
                     }}
                     onCreateManualFight={handleCreateManualFight}
-                    onUpdateGallo={handleUpdateGallo}
+                    onUpdateGallo={handleSaveGallo}
                     onDeleteCuerda={handleDeleteCuerda}
-                    showNotification={showNotification}
                /> : null;
       case Screen.LIVE_FIGHT: {
         const mainFights = matchmakingResults?.mainFights || [];
@@ -674,12 +600,11 @@ const App: React.FC = () => {
                 torneo={torneo} 
                 onUpdateTorneo={handleUpdateTorneo} 
                 onStartMatchmaking={handleStartMatchmaking} 
-                showNotification={showNotification}
                 onSaveCuerda={handleSaveCuerda}
                 onDeleteCuerda={handleDeleteCuerda}
-                onUpdateGallo={handleUpdateGallo}
+                onSaveGallo={handleSaveGallo}
+                onAddBulkGallos={handleAddBulkGallos}
                 onDeleteGallo={handleDeleteGallo}
-                onSaveMultipleGallos={handleSaveMultipleGallos}
                 isMatchmaking={isMatchmaking}
                />;
     }
@@ -700,7 +625,7 @@ const App: React.FC = () => {
   if (!isDataLoaded) {
     return (
         <div className="swirl-bg min-h-screen flex justify-center items-center">
-            <svg className="animate-spin h-10 w-10 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin h-10 w-10 text-amber-500" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
@@ -710,7 +635,6 @@ const App: React.FC = () => {
 
   return (
     <div className="swirl-bg text-gray-200 min-h-screen">
-       <Toaster notifications={notifications} onDismiss={(id) => setNotifications(prev => prev.filter(n => n.id !== id))} />
        <MainLayout>
            {renderScreen()}
        </MainLayout>

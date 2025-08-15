@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
-import { Gallo, Cuerda, PesoUnit, Notification, TipoGallo } from '../types';
+import { Gallo, Cuerda, PesoUnit, TipoGallo } from '../types';
 import Modal from './Modal';
 import { TrashIcon } from './Icons';
 
@@ -35,7 +36,6 @@ interface EditLeftoverGalloModalProps {
     gallo: Gallo | null;
     cuerdas: Cuerda[];
     globalWeightUnit: PesoUnit;
-    showNotification: (message: string, type: Notification['type']) => void;
 }
 
 const EditLeftoverGalloModal: React.FC<EditLeftoverGalloModalProps> = ({
@@ -46,7 +46,6 @@ const EditLeftoverGalloModal: React.FC<EditLeftoverGalloModalProps> = ({
     gallo,
     cuerdas,
     globalWeightUnit,
-    showNotification
 }) => {
     const [ringId, setRingId] = useState('');
     const [color, setColor] = useState('');
@@ -85,7 +84,7 @@ const EditLeftoverGalloModal: React.FC<EditLeftoverGalloModalProps> = ({
 
     const handleDeleteClick = () => {
         if (!confirmDeleteCuerda || !cuerda) {
-            showNotification('Debe confirmar para eliminar la cuerda.', 'error');
+            console.error('Debe confirmar para eliminar la cuerda.');
             return;
         }
         onDeleteCuerda(cuerda.id);
