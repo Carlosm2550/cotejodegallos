@@ -1,48 +1,24 @@
 
-
 import React, { useMemo, useState } from 'react';
-import { Pelea, Torneo, Cuerda, CuerdaStats, Gallo, SortConfig, SortKey, PesoUnit } from '../types';
+import { Pelea, Torneo, Cuerda, CuerdaStats, Gallo, SortConfig, SortKey } from '../types';
 import { ChevronUpIcon, ChevronDownIcon } from './Icons';
 
 
-// --- UTILITY FUNCTIONS ---
-const getWeightUnitAbbr = (unit: PesoUnit): string => {
-    switch (unit) {
-        case PesoUnit.GRAMS: return 'g';
-        case PesoUnit.OUNCES: return 'oz';
-        case PesoUnit.POUNDS: return 'lb';
-        default: return unit;
-    }
+// --- Lbs.Oz Weight Conversion Utilities ---
+const OUNCES_PER_POUND = 16;
+
+const toLbsOz = (totalOunces: number) => {
+    if (isNaN(totalOunces) || totalOunces < 0) return { lbs: 0, oz: 0 };
+    const lbs = Math.floor(totalOunces / OUNCES_PER_POUND);
+    const oz = totalOunces % OUNCES_PER_POUND;
+    return { lbs, oz };
 };
 
-const convertToGrams = (weight: number, unit: PesoUnit): number => {
-    switch (unit) {
-        case PesoUnit.POUNDS: return weight * 453.592;
-        case PesoUnit.OUNCES: return weight * 28.3495;
-        case PesoUnit.GRAMS:
-        default: return weight;
-    }
+const formatWeightLbsOz = (totalOunces: number): string => {
+    const { lbs, oz } = toLbsOz(totalOunces);
+    return `${lbs}.${String(oz).padStart(2, '0')} Lb.Oz`;
 };
 
-const formatWeight = (gallo: Gallo, globalUnit: PesoUnit): string => {
-    const unitAbbr = getWeightUnitAbbr(globalUnit);
-    const grams = convertToGrams(gallo.weight, gallo.weightUnit);
-    let displayWeight: string;
-
-    switch (globalUnit) {
-        case PesoUnit.POUNDS:
-            displayWeight = (grams / 453.592).toFixed(3);
-            break;
-        case PesoUnit.OUNCES:
-            displayWeight = (grams / 28.3495).toFixed(2);
-            break;
-        case PesoUnit.GRAMS:
-        default:
-            displayWeight = grams.toFixed(0);
-            break;
-    }
-    return `${displayWeight} ${unitAbbr}`;
-};
 
 // --- SCREEN ---
 interface ResultsScreenProps { 
@@ -69,14 +45,13 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
     };
 
     const stats: CuerdaStats[] = useMemo(() => {
-        const statsMap: { [key: string]: Omit<CuerdaStats, 'cuerdaName' | 'cuerdaId' | 'fronts'> } = {};
+        const statsMap: { [key: string]: Omit<CuerdaStats, 'cuerdaName' | 'cuerdaId' | 'fronts' | 'points'> } = {};
 
         cuerdas.forEach(c => {
              statsMap[c.id] = {
                 wins: 0,
                 draws: 0,
                 losses: 0,
-                points: 0,
                 totalDurationSeconds: 0,
             };
         });
@@ -86,39 +61,36 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
 
             const idA = pelea.roosterA.cuerdaId;
             const idB = pelea.roosterB.cuerdaId;
-            const isRoundFight = torneo.rondas.enabled && pelea.isRoundFight;
             const duration = pelea.duration || 0;
 
             if (pelea.winner === 'A') {
                 statsMap[idA].wins++;
-                statsMap[idA].totalDurationSeconds += duration; // Only winner gets time
-                if (isRoundFight) statsMap[idA].points += torneo.rondas.pointsForWin;
+                statsMap[idA].totalDurationSeconds += duration;
                 statsMap[idB].losses++;
 
             } else if (pelea.winner === 'B') {
                 statsMap[idB].wins++;
-                statsMap[idB].totalDurationSeconds += duration; // Only winner gets time
-                if (isRoundFight) statsMap[idB].points += torneo.rondas.pointsForWin;
+                statsMap[idB].totalDurationSeconds += duration;
                 statsMap[idA].losses++;
 
             } else if (pelea.winner === 'DRAW') {
-                // In a draw, neither participant is a "winner," so neither gets time.
                 statsMap[idA].draws++;
-                if (isRoundFight) statsMap[idA].points += torneo.rondas.pointsForDraw;
-                
                 statsMap[idB].draws++;
-                if (isRoundFight) statsMap[idB].points += torneo.rondas.pointsForDraw;
             }
         });
         
         return cuerdas.map(c => {
             const frontMatch = c.name.match(/\(F(\d+)\)$/);
             const frontNumber = frontMatch ? parseInt(frontMatch[1], 10) : 1;
+            const cuerdaStats = statsMap[c.id];
+            const points = (cuerdaStats.wins * torneo.pointsForWin) + (cuerdaStats.draws * torneo.pointsForDraw);
+
             return {
                 cuerdaId: c.id,
                 cuerdaName: c.name,
                 fronts: frontNumber,
-                ...statsMap[c.id],
+                ...cuerdaStats,
+                points,
             };
         }).filter(s => (s.wins + s.draws + s.losses) > 0);
 
@@ -133,23 +105,25 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
                     case 'name':
                         comparison = a.cuerdaName.localeCompare(b.cuerdaName);
                         break;
-                    case 'points':
-                        comparison = b.points - a.points;
-                        break;
                     case 'wins':
                         comparison = b.wins - a.wins;
+                        break;
+                    case 'points':
+                        comparison = b.points - a.points;
                         break;
                     case 'time':
                         comparison = a.totalDurationSeconds - b.totalDurationSeconds;
                         break;
                 }
-                 // If primary sort is equal, use points as secondary sort criteria
                 if (comparison === 0 && sortConfig.key !== 'points') {
-                    comparison = b.points - a.points;
+                     comparison = b.points - a.points;
                 }
-                // If still equal, use wins as tertiary
                 if (comparison === 0 && sortConfig.key !== 'wins') {
                     comparison = b.wins - a.wins;
+                }
+                // If still equal, use faster time as tie-breaker
+                if (comparison === 0) {
+                    comparison = a.totalDurationSeconds - b.totalDurationSeconds;
                 }
 
                 return sortConfig.direction === 'asc' ? comparison : -comparison;
@@ -160,17 +134,11 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
 
     const requestSort = (key: SortKey) => {
         let direction: 'asc' | 'desc' = 'desc';
-        // if clicking the same key, toggle direction
         if (sortConfig.key === key && sortConfig.direction === 'desc') {
             direction = 'asc';
         }
-        // default to ascending for name and time
-        if (key === 'name') {
-            if (sortConfig.key !== 'name' || sortConfig.direction === 'desc') direction = 'asc';
-            else direction = 'desc';
-        }
-        if (key === 'time') {
-            if (sortConfig.key !== 'time' || sortConfig.direction === 'desc') direction = 'asc';
+        if (key === 'name' || key === 'time') {
+            if (sortConfig.key !== key || sortConfig.direction === 'desc') direction = 'asc';
             else direction = 'desc';
         }
         setSortConfig({ key, direction });
@@ -227,8 +195,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
                                 <th scope="col" className="px-6 py-3 cursor-pointer" onClick={() => requestSort('name')}>
                                     CUERDA {getSortIcon('name')}
                                 </th>
-                                <th scope="col" className="px-4 py-3 text-center">FRENTE</th>
-                                <th scope="col" className="px-4 py-3 text-center cursor-pointer" onClick={() => requestSort('points')}>
+                                <th scope="col" className="px-3 py-3 text-center cursor-pointer" onClick={() => requestSort('points')}>
                                     PUNTOS {getSortIcon('points')}
                                 </th>
                                 <th scope="col" className="px-3 py-3 text-center cursor-pointer" onClick={() => requestSort('wins')}>
@@ -252,16 +219,15 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
                                    <tr className="border-b border-gray-700 hover:bg-gray-700/30 cursor-pointer" onClick={() => toggleCuerdaExpansion(stat.cuerdaId)}>
                                        <td className="px-4 py-3 font-bold text-center">{index + 1}</td>
                                        <td className="px-6 py-3 font-semibold text-white">{stat.cuerdaName}</td>
-                                       <td className="px-4 py-3 text-center">{stat.fronts}</td>
-                                       <td className="px-4 py-3 text-center font-bold text-white">{stat.points}</td>
-                                       <td className="px-3 py-3 text-center text-green-400">{stat.wins}</td>
+                                       <td className="px-3 py-3 text-center font-bold text-white">{stat.points}</td>
+                                       <td className="px-3 py-3 text-center text-green-400 font-bold">{stat.wins}</td>
                                        <td className="px-3 py-3 text-center text-yellow-400">{stat.draws}</td>
                                        <td className="px-3 py-3 text-center text-red-400">{stat.losses}</td>
                                        <td className="px-2 py-3 text-right font-mono">{String(minutes).padStart(2, '0')}</td>
                                        <td className="px-2 py-3 text-left font-mono">: {String(seconds).padStart(2, '0')}</td>
                                    </tr>
                                    <tr className={`results-details-row ${isExpanded ? '' : 'hidden print:table-row'}`}>
-                                      <td colSpan={9} className="p-4 results-details-cell bg-gray-700/10">
+                                      <td colSpan={8} className="p-4 results-details-cell bg-gray-700/10">
                                         <div className="space-y-2">
                                             <h4 className="font-bold text-amber-300">Detalles de Peleas para {stat.cuerdaName}:</h4>
                                             {teamFights.length > 0 ? teamFights.map(fight => {
@@ -270,10 +236,11 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
                                                 const fightTime = formatTime(fight.duration || 0);
                                                 
                                                 let result = 'Empate';
-                                                if (fight.winner === 'A' && thisTeamRooster === fight.roosterA) result = 'Victoria';
-                                                if (fight.winner === 'B' && thisTeamRooster === fight.roosterB) result = 'Victoria';
-                                                if (fight.winner === 'A' && thisTeamRooster === fight.roosterB) result = 'Derrota';
-                                                if (fight.winner === 'B' && thisTeamRooster === fight.roosterA) result = 'Derrota';
+                                                if ((fight.winner === 'A' && thisTeamRooster === fight.roosterA) || (fight.winner === 'B' && thisTeamRooster === fight.roosterB)) {
+                                                    result = 'Victoria';
+                                                } else if (fight.winner !== 'DRAW') {
+                                                    result = 'Derrota';
+                                                }
 
                                                 return (
                                                      <div key={fight.id} className="text-xs grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 p-2 border-b border-gray-600 last:border-b-0">

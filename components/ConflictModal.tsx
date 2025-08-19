@@ -1,7 +1,8 @@
 
 
+
 import React, { useState, useEffect, useMemo } from 'react';
-import { Gallo, Cuerda, PesoUnit, TipoGallo } from '../types';
+import { Gallo, Cuerda, TipoGallo } from '../types';
 import Modal from './Modal';
 import { TrashIcon } from './Icons';
 
@@ -20,14 +21,21 @@ const InputField: React.FC<InputFieldProps> = ({ label, id, type, ...props }) =>
   );
 };
 
-const getWeightUnitAbbr = (unit: PesoUnit): string => {
-    switch (unit) {
-        case PesoUnit.GRAMS: return 'g';
-        case PesoUnit.OUNCES: return 'oz';
-        case PesoUnit.POUNDS: return 'lb';
-        default: return unit;
-    }
+// --- Lbs.Oz Weight Conversion Utilities ---
+const OUNCES_PER_POUND = 16;
+
+const toLbsOz = (totalOunces: number) => {
+    if (isNaN(totalOunces) || totalOunces < 0) return { lbs: 0, oz: 0 };
+    const lbs = Math.floor(totalOunces / OUNCES_PER_POUND);
+    const oz = totalOunces % OUNCES_PER_POUND;
+    return { lbs, oz };
 };
+
+const formatWeightLbsOz = (totalOunces: number): string => {
+    const { lbs, oz } = toLbsOz(totalOunces);
+    return `${lbs}.${String(oz).padStart(2, '0')} Lb.Oz`;
+};
+
 
 interface EditLeftoverGalloModalProps {
     isOpen: boolean;
@@ -36,7 +44,6 @@ interface EditLeftoverGalloModalProps {
     onDeleteCuerda: (cuerdaId: string) => void;
     gallo: Gallo | null;
     cuerdas: Cuerda[];
-    globalWeightUnit: PesoUnit;
 }
 
 const EditLeftoverGalloModal: React.FC<EditLeftoverGalloModalProps> = ({
@@ -46,16 +53,15 @@ const EditLeftoverGalloModal: React.FC<EditLeftoverGalloModalProps> = ({
     onDeleteCuerda,
     gallo,
     cuerdas,
-    globalWeightUnit,
 }) => {
     const [ringId, setRingId] = useState('');
     const [color, setColor] = useState('');
-    const [weight, setWeight] = useState(0);
     const [ageMonths, setAgeMonths] = useState(1);
     const [markingId, setMarkingId] = useState('');
     const [tipoGallo, setTipoGallo] = useState<TipoGallo>(TipoGallo.LISO);
     const [confirmDeleteCuerda, setConfirmDeleteCuerda] = useState(false);
     const [marca, setMarca] = useState(0);
+    const [weight, setWeight] = useState(0); // weight in total ounces
 
     const cuerda = useMemo(() => gallo ? cuerdas.find(c => c.id === gallo.cuerdaId) : null, [gallo, cuerdas]);
 
@@ -77,7 +83,7 @@ const EditLeftoverGalloModal: React.FC<EditLeftoverGalloModalProps> = ({
         if (!gallo) return;
         
         onUpdate(
-            { ringId, color, cuerdaId: gallo.cuerdaId, weight, weightUnit: globalWeightUnit, ageMonths, markingId, tipoGallo, marca },
+            { ringId, color, cuerdaId: gallo.cuerdaId, weight, ageMonths, markingId, tipoGallo, marca },
             gallo.id
         );
         onClose();
@@ -111,9 +117,9 @@ const EditLeftoverGalloModal: React.FC<EditLeftoverGalloModalProps> = ({
                     </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                     <InputField type="number" label={`Peso (${getWeightUnitAbbr(globalWeightUnit)})`} value={weight} onChange={e => setWeight(Number(e.target.value))} required step="any" />
+                     <InputField label="Peso" value={formatWeightLbsOz(weight)} disabled />
                      <InputField type="number" label="Meses" value={ageMonths} onChange={e => setAgeMonths(Number(e.target.value))} required min="1" />
-                     <InputField label="ID de Marcaje" value={markingId} onChange={e => setMarkingId(e.target.value)} />
+                     <InputField label="Número de Placa (Marcaje)" value={markingId} onChange={e => setMarkingId(e.target.value)} />
                 </div>
                 
                 <div className="border-t border-red-500/30 pt-4 mt-6 space-y-3">

@@ -1,47 +1,24 @@
 
 
+
 import React, { useState } from 'react';
-import { MatchmakingResults, Torneo, Cuerda, Pelea, Gallo, PesoUnit } from '../types';
+import { MatchmakingResults, Torneo, Cuerda, Pelea, Gallo } from '../types';
 import EditLeftoverGalloModal from './ConflictModal';
 import { PencilIcon, WarningIcon } from './Icons';
 
-// --- UTILITY FUNCTIONS ---
-const getWeightUnitAbbr = (unit: PesoUnit): string => {
-    switch (unit) {
-        case PesoUnit.GRAMS: return 'g';
-        case PesoUnit.OUNCES: return 'oz';
-        case PesoUnit.POUNDS: return 'lb';
-        default: return unit;
-    }
+// --- Lbs.Oz Weight Conversion Utilities ---
+const OUNCES_PER_POUND = 16;
+
+const toLbsOz = (totalOunces: number) => {
+    if (isNaN(totalOunces) || totalOunces < 0) return { lbs: 0, oz: 0 };
+    const lbs = Math.floor(totalOunces / OUNCES_PER_POUND);
+    const oz = totalOunces % OUNCES_PER_POUND;
+    return { lbs, oz };
 };
 
-const convertToGrams = (weight: number, unit: PesoUnit): number => {
-    switch (unit) {
-        case PesoUnit.POUNDS: return weight * 453.592;
-        case PesoUnit.OUNCES: return weight * 28.3495;
-        case PesoUnit.GRAMS:
-        default: return weight;
-    }
-};
-
-const formatWeight = (gallo: Gallo, globalUnit: PesoUnit): string => {
-    const unitAbbr = getWeightUnitAbbr(globalUnit);
-    const grams = convertToGrams(gallo.weight, gallo.weightUnit);
-    let displayWeight: string;
-
-    switch (globalUnit) {
-        case PesoUnit.POUNDS:
-            displayWeight = (grams / 453.592).toFixed(3);
-            break;
-        case PesoUnit.OUNCES:
-            displayWeight = (grams / 28.3495).toFixed(2);
-            break;
-        case PesoUnit.GRAMS:
-        default:
-            displayWeight = grams.toFixed(0);
-            break;
-    }
-    return `${displayWeight} ${unitAbbr}`;
+const formatWeightLbsOz = (totalOunces: number): string => {
+    const { lbs, oz } = toLbsOz(totalOunces);
+    return `${lbs}.${String(oz).padStart(2, '0')} Lb.Oz`;
 };
 
 
@@ -110,20 +87,21 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
             <div className="w-5/12 text-right pr-2">
                 <p className="font-bold text-white">{pelea.roosterA.color}</p>
                 <p className="text-xs text-gray-400">{getCuerdaName(pelea.roosterA.cuerdaId)}</p>
-                 <p className="text-xs font-mono">{formatWeight(pelea.roosterA, torneo.weightUnit)} / {pelea.roosterA.ageMonths || 'N/A'}m / {pelea.roosterA.tipoGallo}</p>
+                 <p className="text-xs font-mono">{formatWeightLbsOz(pelea.roosterA.weight)} / {pelea.roosterA.ageMonths || 'N/A'}m / {pelea.roosterA.tipoGallo}</p>
                 <p className="text-xs text-gray-500 font-mono">A:{pelea.roosterA.ringId} M:{pelea.roosterA.markingId}</p>
             </div>
             <div className="w-1/12 text-center text-red-500 font-extrabold">VS</div>
             <div className="w-5/12 text-left pl-2">
                 <p className="font-bold text-white">{pelea.roosterB.color}</p>
                 <p className="text-xs text-gray-400">{getCuerdaName(pelea.roosterB.cuerdaId)}</p>
-                 <p className="text-xs font-mono">{formatWeight(pelea.roosterB, torneo.weightUnit)} / {pelea.roosterB.ageMonths || 'N/A'}m / {pelea.roosterB.tipoGallo}</p>
+                 <p className="text-xs font-mono">{formatWeightLbsOz(pelea.roosterB.weight)} / {pelea.roosterB.ageMonths || 'N/A'}m / {pelea.roosterB.tipoGallo}</p>
                 <p className="text-xs text-gray-500 font-mono">A:{pelea.roosterB.ringId} M:{pelea.roosterB.markingId}</p>
             </div>
         </div>
     );
     
     const totalRoostersForIndividualRound = results.unpairedRoosters.length + (results.individualFights.length * 2);
+    const totalFights = results.mainFights.length;
 
     return (
         <div className="space-y-6 print-target">
@@ -134,26 +112,18 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
             
             <div className="bg-gray-800/50 rounded-2xl shadow-lg border border-gray-700 p-4">
                 <h3 className="text-xl font-bold text-amber-400 mb-3">Estadísticas del Cotejo</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 text-center">
-                    {torneo.rondas.enabled && (
-                        <>
-                           <div className="bg-gray-700/50 p-3 rounded-lg">
-                               <p className="text-2xl font-bold text-white">{results.stats.contribution}</p>
-                               <p className="text-sm text-gray-400">Gallos por equipo</p>
-                           </div>
-                           <div className="bg-gray-700/50 p-3 rounded-lg">
-                               <p className="text-2xl font-bold text-white">{results.individualFights.length}</p>
-                               <p className="text-sm text-gray-400">Peleas Individuales</p>
-                           </div>
-                        </>
-                    )}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-center">
                     <div className="bg-gray-700/50 p-3 rounded-lg">
-                        <p className="text-2xl font-bold text-white">{results.mainFights.length}</p>
-                        <p className="text-sm text-gray-400">Peleas por Rondas</p>
+                        <p className="text-2xl font-bold text-white">{totalFights}</p>
+                        <p className="text-sm text-gray-400">Peleas Principales</p>
+                    </div>
+                     <div className="bg-gray-700/50 p-3 rounded-lg">
+                        <p className="text-2xl font-bold text-white">{results.individualFights.length}</p>
+                        <p className="text-sm text-gray-400">Peleas Individuales</p>
                     </div>
                     <div className="bg-gray-700/50 p-3 rounded-lg">
                         <p className="text-2xl font-bold text-white">{results.stats.mainTournamentRoostersCount}</p>
-                        <p className="text-sm text-gray-400">Gallos aptos</p>
+                        <p className="text-sm text-gray-400">Gallos Aptos</p>
                     </div>
                     <div className="bg-gray-700/50 p-3 rounded-lg">
                         <p className="text-2xl font-bold text-white">{results.unpairedRoosters.length}</p>
@@ -163,7 +133,7 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
             </div>
 
             <div className="space-y-4 printable-card">
-                <h3 className="text-xl font-bold text-amber-400">Peleas por Rondas</h3>
+                <h3 className="text-xl font-bold text-amber-400">Peleas Principales</h3>
                 {results.mainFights.length > 0 ? (
                     <div className="space-y-2">
                         {results.mainFights.map(renderPelea)}
@@ -207,9 +177,8 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
                                         }
                                     }
                                     
-                                    const weightInGrams = convertToGrams(gallo.weight, gallo.weightUnit);
-                                    const isUnderWeight = weightInGrams < torneo.minWeight;
-                                    const isOverWeight = weightInGrams > torneo.maxWeight;
+                                    const isUnderWeight = gallo.weight < torneo.minWeight;
+                                    const isOverWeight = gallo.weight > torneo.maxWeight;
 
 
                                     return (
@@ -233,7 +202,7 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
                                             </div>
                                             <div className="text-right flex-shrink-0 ml-2 flex items-center">
                                                 <div>
-                                                    <p className="font-mono text-sm">{formatWeight(gallo, torneo.weightUnit)}</p>
+                                                    <p className="font-mono text-sm">{formatWeightLbsOz(gallo.weight)}</p>
                                                     <p className="font-mono text-xs text-gray-400">{gallo.ageMonths}m / {gallo.tipoGallo}</p>
                                                 </div>
                                                 <button
@@ -287,7 +256,6 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
                     onClose={() => setEditModalOpen(false)}
                     gallo={editingGallo}
                     cuerdas={cuerdas}
-                    globalWeightUnit={torneo.weightUnit}
                     onUpdate={handleUpdateGalloClick}
                     onDeleteCuerda={handleDeleteCuerdaClick}
                 />

@@ -1,49 +1,25 @@
 
 
+
 import React, { useState, useEffect } from 'react';
-import { Pelea, Torneo, Cuerda, Gallo, PesoUnit } from '../types';
+import { Pelea, Torneo, Cuerda, Gallo } from '../types';
 import { PlayIcon, PauseIcon, RepeatIcon } from './Icons';
 
 
-// --- UTILITY FUNCTIONS ---
-const getWeightUnitAbbr = (unit: PesoUnit): string => {
-    switch (unit) {
-        case PesoUnit.GRAMS: return 'g';
-        case PesoUnit.OUNCES: return 'oz';
-        case PesoUnit.POUNDS: return 'lb';
-        default: return unit;
-    }
+// --- Lbs.Oz Weight Conversion Utilities ---
+const OUNCES_PER_POUND = 16;
+
+const toLbsOz = (totalOunces: number) => {
+    if (isNaN(totalOunces) || totalOunces < 0) return { lbs: 0, oz: 0 };
+    const lbs = Math.floor(totalOunces / OUNCES_PER_POUND);
+    const oz = totalOunces % OUNCES_PER_POUND;
+    return { lbs, oz };
 };
 
-const convertToGrams = (weight: number, unit: PesoUnit): number => {
-    switch (unit) {
-        case PesoUnit.POUNDS: return weight * 453.592;
-        case PesoUnit.OUNCES: return weight * 28.3495;
-        case PesoUnit.GRAMS:
-        default: return weight;
-    }
+const formatWeightLbsOz = (totalOunces: number): string => {
+    const { lbs, oz } = toLbsOz(totalOunces);
+    return `${lbs}.${String(oz).padStart(2, '0')}`;
 };
-
-const formatWeight = (gallo: Gallo, globalUnit: PesoUnit): string => {
-    const unitAbbr = getWeightUnitAbbr(globalUnit);
-    const grams = convertToGrams(gallo.weight, gallo.weightUnit);
-    let displayWeight: string;
-
-    switch (globalUnit) {
-        case PesoUnit.POUNDS:
-            displayWeight = (grams / 453.592).toFixed(3);
-            break;
-        case PesoUnit.OUNCES:
-            displayWeight = (grams / 28.3495).toFixed(2);
-            break;
-        case PesoUnit.GRAMS:
-        default:
-            displayWeight = grams.toFixed(0);
-            break;
-    }
-    return `${displayWeight} ${unitAbbr}`;
-};
-
 
 // --- SCREEN ---
 interface LiveFightScreenProps {
@@ -101,6 +77,10 @@ const LiveFightScreen: React.FC<LiveFightScreenProps> = ({ peleas, onFinishFight
     )
   }
 
+  const formatRoosterDetails = (rooster: Gallo) => {
+      return `${formatWeightLbsOz(rooster.weight)} Lb.Oz / ${rooster.ageMonths}m / ${rooster.tipoGallo}`
+  }
+
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -114,7 +94,7 @@ const LiveFightScreen: React.FC<LiveFightScreenProps> = ({ peleas, onFinishFight
             <div className="text-center md:text-right">
                  <h3 className="text-2xl font-bold text-white">{currentFight.roosterA.color}</h3>
                  <p className="text-amber-400">{getCuerdaName(currentFight.roosterA.cuerdaId)}</p>
-                 <p className="text-gray-400">{formatWeight(currentFight.roosterA, torneo.weightUnit)} / {currentFight.roosterA.ageMonths}m / {currentFight.roosterA.tipoGallo}</p>
+                 <p className="text-gray-400">{formatRoosterDetails(currentFight.roosterA)}</p>
             </div>
 
             {/* Manual Time Input */}
@@ -145,7 +125,7 @@ const LiveFightScreen: React.FC<LiveFightScreenProps> = ({ peleas, onFinishFight
             <div className="text-center md:text-left">
                  <h3 className="text-2xl font-bold text-white">{currentFight.roosterB.color}</h3>
                  <p className="text-amber-400">{getCuerdaName(currentFight.roosterB.cuerdaId)}</p>
-                 <p className="text-gray-400">{formatWeight(currentFight.roosterB, torneo.weightUnit)} / {currentFight.roosterB.ageMonths}m / {currentFight.roosterB.tipoGallo}</p>
+                 <p className="text-gray-400">{formatRoosterDetails(currentFight.roosterB)}</p>
             </div>
         </div>
 

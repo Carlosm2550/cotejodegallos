@@ -1,20 +1,9 @@
 
-
-
-
-
-
 export enum Screen {
   SETUP,
   MATCHMAKING,
   LIVE_FIGHT,
   RESULTS,
-}
-
-export enum PesoUnit {
-  GRAMS = 'gramos',
-  OUNCES = 'onzas',
-  POUNDS = 'libras',
 }
 
 export enum TipoGallo {
@@ -40,8 +29,7 @@ export interface Gallo {
   ringId: string;
   color: string;
   cuerdaId: string;
-  weight: number;
-  weightUnit: PesoUnit;
+  weight: number; // Stored as total ounces
   ageMonths: number;
   markingId: string;
   tipoGallo: TipoGallo;
@@ -56,24 +44,20 @@ export interface Pelea {
   roosterB: Gallo;
   winner: 'A' | 'B' | 'DRAW' | null;
   duration: number | null; // in seconds
-  isRoundFight?: boolean;
 }
 
 export interface Torneo {
   name: string;
+  tournamentManager?: string;
   date: string;
-  weightTolerance: number; // in grams
+  weightTolerance: number; // in total ounces
   ageToleranceMonths: number;
-  exceptions: string[][]; // Array of exception pairs, e.g., [['p1', 'p2'], ['p1', 'p3']]
-  weightUnit: PesoUnit;
-  minWeight: number; // In grams
-  maxWeight: number; // In grams
-  rondas: {
-    enabled: boolean;
-    pointsForWin: number;
-    pointsForDraw: number;
-  };
+  minWeight: number; // in total ounces
+  maxWeight: number; // in total ounces
   roostersPerTeam: number;
+  pointsForWin: number;
+  pointsForDraw: number;
+  exceptions: Array<{ cuerda1Id: string; cuerda2Id: string; }>;
 }
 
 export type CuerdaStats = {
@@ -82,12 +66,12 @@ export type CuerdaStats = {
   wins: number;
   draws: number;
   losses: number;
-  points: number;
   fronts: number;
   totalDurationSeconds: number;
+  points: number;
 };
 
-export type SortKey = 'name' | 'points' | 'wins' | 'time';
+export type SortKey = 'name' | 'wins' | 'time' | 'points';
 export type SortConfig = {
     key: SortKey | null;
     direction: 'asc' | 'desc';
