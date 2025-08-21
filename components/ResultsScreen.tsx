@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import { Pelea, Torneo, Cuerda, CuerdaStats, Gallo, SortConfig, SortKey } from '../types';
 import { ChevronUpIcon, ChevronDownIcon } from './Icons';
@@ -97,38 +96,47 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
     }, [peleas, cuerdas, torneo]);
 
     const sortedStats = useMemo(() => {
-        let sortableItems = [...stats];
-        if (sortConfig.key !== null) {
-            sortableItems.sort((a, b) => {
-                let comparison = 0;
-                switch(sortConfig.key) {
-                    case 'name':
-                        comparison = a.cuerdaName.localeCompare(b.cuerdaName);
-                        break;
-                    case 'wins':
-                        comparison = b.wins - a.wins;
-                        break;
-                    case 'points':
-                        comparison = b.points - a.points;
-                        break;
-                    case 'time':
-                        comparison = a.totalDurationSeconds - b.totalDurationSeconds;
-                        break;
-                }
-                if (comparison === 0 && sortConfig.key !== 'points') {
-                     comparison = b.points - a.points;
-                }
-                if (comparison === 0 && sortConfig.key !== 'wins') {
-                    comparison = b.wins - a.wins;
-                }
-                // If still equal, use faster time as tie-breaker
-                if (comparison === 0) {
-                    comparison = a.totalDurationSeconds - b.totalDurationSeconds;
-                }
+        const { key, direction } = sortConfig;
+        const sortableItems = [...stats];
 
-                return sortConfig.direction === 'asc' ? comparison : -comparison;
-            });
-        }
+        sortableItems.sort((a, b) => {
+            // Main comparison logic based on the clicked header
+            let comparison = 0;
+            switch (key) {
+                case 'name':
+                    comparison = a.cuerdaName.localeCompare(b.cuerdaName);
+                    break;
+                case 'wins':
+                    comparison = a.wins - b.wins;
+                    break;
+                case 'time':
+                    comparison = a.totalDurationSeconds - b.totalDurationSeconds;
+                    break;
+                case 'points':
+                default:
+                    comparison = a.points - b.points;
+                    break;
+            }
+
+            // Apply direction for the primary sort key
+            if (comparison !== 0) {
+                return direction === 'asc' ? comparison : -comparison;
+            }
+
+            // If the primary sort is a tie, apply the fixed tie-breaking rules.
+            // Rule 1: More points is better.
+            if (a.points !== b.points) {
+                return b.points - a.points;
+            }
+
+            // Rule 2: Less time is better.
+            if (a.totalDurationSeconds !== b.totalDurationSeconds) {
+                return a.totalDurationSeconds - b.totalDurationSeconds;
+            }
+            
+            return 0; // Truly equal
+        });
+
         return sortableItems;
     }, [stats, sortConfig]);
 

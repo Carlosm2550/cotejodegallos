@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Screen, Cuerda, Gallo, Pelea, Torneo, MatchmakingResults, TipoGallo, TipoEdad } from './types';
 import { TrophyIcon, PlayIcon } from './components/Icons';
@@ -157,7 +153,7 @@ const App: React.FC = () => {
   const [cuerdas, setCuerdas] = useState<Cuerda[]>([]);
   const [gallos, setGallos] = useState<Gallo[]>([]);
   const [torneo, setTorneo] = useState<Torneo>({
-    name: "Torneo de Amigos",
+    name: "Nuevo Torneo",
     tournamentManager: "",
     date: new Date().toISOString().split('T')[0],
     weightTolerance: 1, 
@@ -182,29 +178,26 @@ const App: React.FC = () => {
         const savedGallos = localStorage.getItem('galleraPro_gallos');
         const savedTorneo = localStorage.getItem('galleraPro_torneo');
 
-        if (savedCuerdas && savedGallos) {
+        if (savedCuerdas && savedGallos && savedTorneo) {
             setCuerdas(JSON.parse(savedCuerdas));
             setGallos(JSON.parse(savedGallos));
-        } else {
-            setCuerdas([]);
-            setGallos([]);
-        }
-
-        if (savedTorneo) {
-            let loadedTorneo = JSON.parse(savedTorneo);
-            // Add new fields if they don't exist for backward compatibility
+            
+            const loadedTorneo = JSON.parse(savedTorneo);
             const defaults = {
                 roostersPerTeam: 2,
                 pointsForWin: 3,
                 pointsForDraw: 1,
                 exceptions: [],
             };
-            setTorneo({ ...defaults, ...loadedTorneo });
+            setTorneo(prev => ({ ...prev, ...defaults, ...loadedTorneo }));
         }
+        // If there's no saved data, the app will start with the initial empty state.
     } catch (error) {
-        console.error("Failed to load data from local storage", error);
-        setCuerdas([]);
-        setGallos([]);
+        console.error("Failed to load data from local storage, starting fresh.", error);
+        // Clear potentially corrupted data to prevent future errors
+        localStorage.removeItem('galleraPro_cuerdas');
+        localStorage.removeItem('galleraPro_gallos');
+        localStorage.removeItem('galleraPro_torneo');
     }
     setDataLoaded(true);
   }, []);
