@@ -40,17 +40,17 @@ const rawDemoData = [
         "ID de Marcaje": "30303",
         "tipo de gallo": "pava",
         "clase": "pollo",
-        "Marca": "Marca 1 (m1) - Año 2025",
+        "Marca": "Marca 11 (m11) - Año 2024",
         "Frente": 1
       },
       {
         "ID del Anillo": "5505",
         "Color del Gallo": "Tornado",
-        "Peso": 4.02,
+        "Peso": 4.10,
         "ID de Marcaje": "40404",
         "tipo de gallo": "pava",
         "clase": "gallo",
-        "Marca": "Marca 6 (m6) - Año 2024",
+        "Marca": "Marca 9 (m9) - Año 2024",
         "Frente": 1
       }
     ]
@@ -62,11 +62,11 @@ const rawDemoData = [
       {
         "ID del Anillo": "9191",
         "Color del Gallo": "Sombra",
-        "Peso": 2.15,
+        "Peso": 2.14,
         "ID de Marcaje": "50505",
         "tipo de gallo": "Liso",
         "clase": "pollo",
-        "Marca": "Marca 2 (m2) - Año 2025",
+        "Marca": "Marca 11 (m11) - Año 2024",
         "Frente": 1
       },
       {
@@ -101,8 +101,8 @@ const rawDemoData = [
         "Peso": 3.01,
         "ID de Marcaje": "80808",
         "tipo de gallo": "pava",
-        "clase": "pollo",
-        "Marca": "Marca 12 (m12) - Año 2024",
+        "clase": "gallo",
+        "Marca": "Marca 10 (m10) - Año 2024",
         "Frente": 1
       }
     ]
@@ -140,21 +140,21 @@ const rawDemoData = [
       {
         "ID del Anillo": "3737",
         "Color del Gallo": "Cometa",
-        "Peso": 4.00,
+        "Peso": 4.12,
         "ID de Marcaje": "23232",
         "tipo de gallo": "pava",
         "clase": "gallo",
-        "Marca": "Marca 8 (m8) - Año 2024",
+        "Marca": "Marca 9 (m9) - Año 2024",
         "Frente": 1
       },
       {
         "ID del Anillo": "2828",
         "Color del Gallo": "Meteoro",
-        "Peso": 2.15,
+        "Peso": 2.13,
         "ID de Marcaje": "34343",
         "tipo de gallo": "pava",
         "clase": "pollo",
-        "Marca": "Marca 1 (m1) - Año 2025",
+        "Marca": "Marca 11 (m11) - Año 2024",
         "Frente": 1
       }
     ]
@@ -176,11 +176,11 @@ const rawDemoData = [
       {
         "ID del Anillo": "1010",
         "Color del Gallo": "Acero",
-        "Peso": 2.15,
+        "Peso": 2.10,
         "ID de Marcaje": "56565",
         "tipo de gallo": "Liso",
-        "clase": "pollo",
-        "Marca": "Marca 3 (m3) - Año 2025",
+        "clase": "gallo",
+        "Marca": "Marca 10 (m10) - Año 2024",
         "Frente": 1
       }
     ]
@@ -202,7 +202,7 @@ const rawDemoData = [
       {
         "ID del Anillo": "3344",
         "Color del Gallo": "Príncipe",
-        "Peso": 4.00,
+        "Peso": 4.15,
         "ID de Marcaje": "78787",
         "tipo de gallo": "pava",
         "clase": "gallo",
@@ -222,7 +222,7 @@ const rawDemoData = [
         "ID de Marcaje": "89898",
         "tipo de gallo": "Liso",
         "clase": "pollo",
-        "Marca": "Marca 2 (m2) - Año 2025",
+        "Marca": "Marca 11 (m11) - Año 2024",
         "Frente": 1
       },
       {
@@ -232,7 +232,7 @@ const rawDemoData = [
         "ID de Marcaje": "10001",
         "tipo de gallo": "Liso",
         "clase": "gallo",
-        "Marca": "Marca 7 (m7) - Año 2024",
+        "Marca": "Marca 9 (m9) - Año 2024",
         "Frente": 1
       }
     ]
@@ -247,8 +247,8 @@ const rawDemoData = [
         "Peso": 3.08,
         "ID de Marcaje": "21112",
         "tipo de gallo": "pava",
-        "clase": "pollo",
-        "Marca": "Marca 12 (m12) - Año 2024",
+        "clase": "gallo",
+        "Marca": "Marca 10 (m10) - Año 2024",
         "Frente": 1
       },
       {
@@ -296,11 +296,11 @@ const rawDemoData = [
       {
         "ID del Anillo": "1591",
         "Color del Gallo": "Ceniza",
-        "Peso": 2.15,
+        "Peso": 2.11,
         "ID de Marcaje": "65556",
         "tipo de gallo": "pava",
-        "clase": "pollo",
-        "Marca": "Marca 8 (m8) - Año 2025",
+        "clase": "gallo",
+        "Marca": "Marca 10 (m10) - Año 2024",
         "Frente": 1
       },
       {
@@ -310,7 +310,7 @@ const rawDemoData = [
         "ID de Marcaje": "76667",
         "tipo de gallo": "pava",
         "clase": "gallo",
-        "Marca": "Marca 5 (m5) - Año 2024",
+        "Marca": "Marca 9 (m9) - Año 2024",
         "Frente": 1
       }
     ]
@@ -322,21 +322,21 @@ const rawDemoData = [
       {
         "ID del Anillo": "8528",
         "Color del Gallo": "Mito",
-        "Peso": 2.15,
+        "Peso": 2.12,
         "ID de Marcaje": "87778",
         "tipo de gallo": "Liso",
         "clase": "pollo",
-        "Marca": "Marca 7 (m7) - Año 2025",
+        "Marca": "Marca 11 (m11) - Año 2024",
         "Frente": 1
       },
       {
         "ID del Anillo": "9639",
         "Color del Gallo": "Héroe",
-        "Peso": 4.02,
+        "Peso": 5.00,
         "ID de Marcaje": "98889",
         "tipo de gallo": "Liso",
         "clase": "gallo",
-        "Marca": "Marca 4 (m4) - Año 2024",
+        "Marca": "Marca 9 (m9) - Año 2024",
         "Frente": 1
       }
     ]
@@ -403,8 +403,8 @@ const rawDemoData = [
         "Peso": 2.15,
         "ID de Marcaje": "55445",
         "tipo de gallo": "pava",
-        "clase": "pollo",
-        "Marca": "Marca 6 (m6) - Año 2025",
+        "clase": "gallo",
+        "Marca": "Marca 10 (m10) - Año 2024",
         "Frente": 1
       },
       {
@@ -414,7 +414,7 @@ const rawDemoData = [
         "ID de Marcaje": "66556",
         "tipo de gallo": "pava",
         "clase": "gallo",
-        "Marca": "Marca 8 (m8) - Año 2024",
+        "Marca": "Marca 9 (m9) - Año 2024",
         "Frente": 1
       }
     ]
@@ -426,11 +426,11 @@ const rawDemoData = [
       {
         "ID del Anillo": "8147",
         "Color del Gallo": "Sabana",
-        "Peso": 2.15,
+        "Peso": 2.11,
         "ID de Marcaje": "77667",
         "tipo de gallo": "Liso",
         "clase": "pollo",
-        "Marca": "Marca 5 (m5) - Año 2025",
+        "Marca": "Marca 11 (m11) - Año 2024",
         "Frente": 1
       },
       {
@@ -440,7 +440,7 @@ const rawDemoData = [
         "ID de Marcaje": "88778",
         "tipo de gallo": "Liso",
         "clase": "gallo",
-        "Marca": "Marca 6 (m6) - Año 2024",
+        "Marca": "Marca 10 (m10) - Año 2024",
         "Frente": 1
       }
     ]
@@ -507,8 +507,8 @@ const rawDemoData = [
         "Peso": 2.15,
         "ID de Marcaje": "44224",
         "tipo de gallo": "pava",
-        "clase": "pollo",
-        "Marca": "Marca 4 (m4) - Año 2025",
+        "clase": "gallo",
+        "Marca": "Marca 10 (m10) - Año 2024",
         "Frente": 1
       },
       {
@@ -518,7 +518,7 @@ const rawDemoData = [
         "ID de Marcaje": "55335",
         "tipo de gallo": "pava",
         "clase": "gallo",
-        "Marca": "Marca 8 (m8) - Año 2024",
+        "Marca": "Marca 9 (m9) - Año 2024",
         "Frente": 1
       }
     ]
@@ -533,8 +533,8 @@ const rawDemoData = [
         "Peso": 2.15,
         "ID de Marcaje": "66446",
         "tipo de gallo": "Liso",
-        "clase": "pollo",
-        "Marca": "Marca 12 (m12) - Año 2024",
+        "clase": "gallo",
+        "Marca": "Marca 10 (m10) - Año 2024",
         "Frente": 1
       },
       {
@@ -544,7 +544,7 @@ const rawDemoData = [
         "ID de Marcaje": "77557",
         "tipo de gallo": "Liso",
         "clase": "gallo",
-        "Marca": "Marca 7 (m7) - Año 2024",
+        "Marca": "Marca 9 (m9) - Año 2024",
         "Frente": 1
       }
     ]
@@ -612,7 +612,7 @@ const rawDemoData = [
         "ID de Marcaje": "34003",
         "tipo de gallo": "pava",
         "clase": "pollo",
-        "Marca": "Marca 1 (m1) - Año 2025",
+        "Marca": "Marca 11 (m11) - Año 2024",
         "Frente": 1
       },
       {
@@ -622,7 +622,7 @@ const rawDemoData = [
         "ID de Marcaje": "45114",
         "tipo de gallo": "pava",
         "clase": "gallo",
-        "Marca": "Marca 6 (m6) - Año 2024",
+        "Marca": "Marca 9 (m9) - Año 2024",
         "Frente": 1
       }
     ]
@@ -637,8 +637,8 @@ const rawDemoData = [
         "Peso": 2.15,
         "ID de Marcaje": "56225",
         "tipo de gallo": "Liso",
-        "clase": "pollo",
-        "Marca": "Marca 12 (m12) - Año 2024",
+        "clase": "gallo",
+        "Marca": "Marca 10 (m10) - Año 2024",
         "Frente": 1
       },
       {
@@ -648,7 +648,7 @@ const rawDemoData = [
         "ID de Marcaje": "67336",
         "tipo de gallo": "Liso",
         "clase": "gallo",
-        "Marca": "Marca 5 (m5) - Año 2024",
+        "Marca": "Marca 9 (m9) - Año 2024",
         "Frente": 1
       }
     ]
@@ -663,8 +663,8 @@ const rawDemoData = [
         "Peso": 3.01,
         "ID de Marcaje": "98765",
         "tipo de gallo": "pava",
-        "clase": "pollo",
-        "Marca": "Marca 12 (m12) - Año 2024",
+        "clase": "gallo",
+        "Marca": "Marca 10 (m10) - Año 2024",
         "Frente": 2
       },
       {
@@ -712,11 +712,11 @@ const rawDemoData = [
       {
         "ID del Anillo": "5005",
         "Color del Gallo": "Abismo",
-        "Peso": 2.15,
+        "Peso": 2.13,
         "ID de Marcaje": "55668",
         "tipo de gallo": "pava",
-        "clase": "pollo",
-        "Marca": "Marca 1 (m1) - Año 2025",
+        "clase": "gallo",
+        "Marca": "Marca 9 (m9) - Año 2024",
         "Frente": 2
       },
       {
@@ -726,7 +726,7 @@ const rawDemoData = [
         "ID de Marcaje": "77880",
         "tipo de gallo": "pava",
         "clase": "gallo",
-        "Marca": "Marca 8 (m8) - Año 2024",
+        "Marca": "Marca 9 (m9) - Año 2024",
         "Frente": 2
       }
     ]
@@ -764,21 +764,21 @@ const rawDemoData = [
       {
         "ID del Anillo": "9009",
         "Color del Gallo": "Granito",
-        "Peso": 4.05,
+        "Peso": 4.15,
         "ID de Marcaje": "33447",
         "tipo de gallo": "Liso",
         "clase": "gallo",
-        "Marca": "Marca 7 (m7) - Año 2024",
+        "Marca": "Marca 9 (m9) - Año 2024",
         "Frente": 2
       },
       {
         "ID del Anillo": "1100",
         "Color del Gallo": "Hierro",
-        "Peso": 2.15,
+        "Peso": 2.10,
         "ID de Marcaje": "55669",
         "tipo de gallo": "Liso",
-        "clase": "pollo",
-        "Marca": "Marca 12 (m12) - Año 2024",
+        "clase": "gallo",
+        "Marca": "Marca 10 (m10) - Año 2024",
         "Frente": 2
       }
     ]
@@ -794,7 +794,7 @@ const rawDemoData = [
         "ID de Marcaje": "77881",
         "tipo de gallo": "pava",
         "clase": "pollo",
-        "Marca": "Marca 4 (m4) - Año 2025",
+        "Marca": "Marca 11 (m11) - Año 2024",
         "Frente": 2
       },
       {
@@ -819,8 +819,8 @@ const rawDemoData = [
         "Peso": 2.15,
         "ID de Marcaje": "22114",
         "tipo de gallo": "Liso",
-        "clase": "pollo",
-        "Marca": "Marca 3 (m3) - Año 2025",
+        "clase": "gallo",
+        "Marca": "Marca 10 (m10) - Año 2024",
         "Frente": 2
       },
       {
@@ -830,7 +830,7 @@ const rawDemoData = [
         "ID de Marcaje": "44336",
         "tipo de gallo": "Liso",
         "clase": "gallo",
-        "Marca": "Marca 6 (m6) - Año 2024",
+        "Marca": "Marca 9 (m9) - Año 2024",
         "Frente": 2
       }
     ]
@@ -856,7 +856,7 @@ const rawDemoData = [
         "ID de Marcaje": "88770",
         "tipo de gallo": "Liso",
         "clase": "gallo",
-        "Marca": "Marca 4 (m4) - Año 2024",
+        "Marca": "Marca 9 (m9) - Año 2024",
         "Frente": 2
       }
     ]

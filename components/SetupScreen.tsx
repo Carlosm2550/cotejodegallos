@@ -1,125 +1,30 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Cuerda, Gallo, Torneo, TipoGallo, TipoEdad } from '../types';
-import { SettingsIcon, RoosterIcon, UsersIcon, PlusIcon, TrashIcon, PencilIcon, XIcon, PlayIcon, WarningIcon, ChevronDownIcon, ChevronUpIcon } from './Icons';
+import { Cuerda, Gallo, Torneo } from '../types';
+import { SettingsIcon, RoosterIcon, UsersIcon, PlusIcon, TrashIcon, PencilIcon, PlayIcon, WarningIcon, RepeatIcon } from './Icons';
 import Modal from './Modal';
 import { CuerdaFormData } from '../App';
-import { AGE_OPTIONS_BY_MARCA } from '../constants';
+import GalloFormModal, { LbsOzInput, InputField } from './GalloFormModal';
 
 
 // --- Lbs.Oz Weight Conversion Utilities ---
 const OUNCES_PER_POUND = 16;
-
-const toLbsOz = (totalOunces: number) => {
-    if (isNaN(totalOunces) || totalOunces < 0) return { lbs: 0, oz: 0 };
-    const total = Math.round(totalOunces); // Work with integers to avoid floating point issues
-    const lbs = Math.floor(total / OUNCES_PER_POUND);
-    const oz = total % OUNCES_PER_POUND;
-    return { lbs, oz };
-};
-
 const fromLbsOz = (lbs: number, oz: number) => {
     return Math.round((lbs * OUNCES_PER_POUND) + oz);
 };
-
 const formatWeightLbsOz = (totalOunces: number, withUnit = false): string => {
-    const { lbs, oz } = toLbsOz(totalOunces);
+    const total = Math.round(totalOunces);
+    const lbs = Math.floor(total / OUNCES_PER_POUND);
+    const oz = total % OUNCES_PER_POUND;
     const unit = withUnit ? ' Lb.Oz' : '';
     return `${lbs}.${String(oz).padStart(2, '0')}${unit}`;
 };
 
-const parseWeightLbsOz = (value: string): number => {
-    const cleanValue = value.replace(/[^0-9.]/g, '');
-    const parts = cleanValue.split('.');
-    let lbs = parseInt(parts[0], 10) || 0;
-    let oz_input = parts[1] || '0';
-    // Ensure oz part is treated as an integer, not octal, and handle partial input like "3."
-    let oz = parseInt(oz_input, 10) || 0;
+// --- VALIDATION CONSTANTS & FUNCTIONS ---
+const MIN_TOURNAMENT_WEIGHT = fromLbsOz(2, 10);
+const MAX_TOURNAMENT_WEIGHT = fromLbsOz(5, 0);
 
-    if (oz >= OUNCES_PER_POUND) {
-        lbs += Math.floor(oz / OUNCES_PER_POUND);
-        oz = oz % OUNCES_PER_POUND;
-    }
-    
-    return fromLbsOz(lbs, oz);
-};
 
 // --- HELPER & UI COMPONENTS ---
-interface LbsOzInputProps {
-  label: string;
-  value: number; // Total ounces
-  onChange: (newValue: number) => void;
-  onBlur?: () => void;
-  disabled?: boolean;
-}
-const LbsOzInput: React.FC<LbsOzInputProps> = ({ label, value, onChange, onBlur, disabled = false }) => {
-    const [displayValue, setDisplayValue] = useState(formatWeightLbsOz(value));
-
-    useEffect(() => {
-        setDisplayValue(formatWeightLbsOz(value));
-    }, [value]);
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setDisplayValue(e.target.value);
-    };
-
-    const handleBlur = () => {
-        const totalOunces = parseWeightLbsOz(displayValue);
-        onChange(totalOunces);
-        if (onBlur) onBlur();
-    };
-
-    const handleStep = (amount: number) => {
-        const newValue = Math.max(0, value + amount);
-        onChange(newValue);
-    };
-    
-    const inputId = `input-${label.replace(/\s+/g, '-')}`;
-
-    return (
-        <div>
-            <label htmlFor={inputId} className="block text-sm font-medium text-gray-400 mb-1">{label}</label>
-            <div className="relative flex items-center">
-                <input
-                    id={inputId}
-                    type="text"
-                    value={displayValue}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    disabled={disabled}
-                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-10 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition text-center font-mono disabled:bg-gray-800 disabled:opacity-70 disabled:cursor-not-allowed"
-                    inputMode="decimal"
-                />
-                <div className="absolute right-2 flex flex-col space-y-1">
-                    <button type="button" onClick={() => handleStep(1)} disabled={disabled} className="text-gray-400 hover:text-white h-4 flex items-center justify-center rounded-sm bg-gray-600/50 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"><ChevronUpIcon className="w-4 h-4"/></button>
-                    <button type="button" onClick={() => handleStep(-1)} disabled={disabled} className="text-gray-400 hover:text-white h-4 flex items-center justify-center rounded-sm bg-gray-600/50 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"><ChevronDownIcon className="w-4 h-4"/></button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-interface InputFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label: string;
-  wrapperClassName?: string;
-}
-const InputField: React.FC<InputFieldProps> = ({ label, id, type, wrapperClassName, ...props }) => {
-  const inputId = id || `input-${label.replace(/\s+/g, '-')}`;
-
-  return (
-    <div className={wrapperClassName}>
-      <label htmlFor={inputId} className="block text-sm font-medium text-gray-400 mb-1">{label}</label>
-      <div className="relative">
-        <input
-          id={inputId}
-          type={type}
-          {...props}
-          className={`w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition disabled:bg-gray-600 disabled:opacity-70`}
-        />
-      </div>
-    </div>
-  );
-};
-
 interface SectionCardProps {
   icon: React.ReactNode;
   title: string;
@@ -200,346 +105,6 @@ const CuerdaFormModal: React.FC<{
     );
 };
 
-interface GalloBulkFormData {
-    ringId: string;
-    color: string;
-    cuerdaId: string;
-    weight: number; // total ounces
-    ageMonths: string;
-    markingId: string;
-    tipoGallo: TipoGallo;
-    marca: string;
-}
-
-const GalloFormModal: React.FC<{ 
-    isOpen: boolean; 
-    onClose: () => void; 
-    onSaveSingle: (gallo: Omit<Gallo, 'id' | 'tipoEdad'>, currentGalloId: string) => void; 
-    onSaveBulk: (gallos: Omit<Gallo, 'id' | 'tipoEdad'>[]) => void;
-    gallo: Gallo | null;
-    cuerdas: Cuerda[];
-    gallos: Gallo[];
-    torneo: Torneo;
-}> = ({ isOpen, onClose, onSaveSingle, onSaveBulk, gallo, cuerdas, gallos, torneo }) => {
-    
-    // --- State for Single Edit Mode ---
-    const [singleForm, setSingleForm] = useState<Omit<Gallo, 'id' | 'tipoEdad'>>({} as any);
-    
-    // --- State for Bulk Add Mode ---
-    const [selectedCuerdaId, setSelectedCuerdaId] = useState('');
-    const [activeTabCuerdaId, setActiveTabCuerdaId] = useState('');
-    const [stagedGallos, setStagedGallos] = useState<Record<string, Omit<Gallo, 'id' | 'tipoEdad'>[]>>({});
-
-    const initialGalloFormState: GalloBulkFormData = {
-        ringId: '', color: '', cuerdaId: '', weight: 0, ageMonths: '', markingId: '', tipoGallo: TipoGallo.LISO, marca: '',
-    };
-    const [currentGalloForm, setCurrentGalloForm] = useState<GalloBulkFormData>(initialGalloFormState);
-    
-    const singleEditTipoEdad = useMemo(() => (Number(singleForm.ageMonths) >= 12 ? TipoEdad.GALLO : TipoEdad.POLLO), [singleForm.ageMonths]);
-    const bulkAddTipoEdad = useMemo(() => (Number(currentGalloForm.ageMonths) >= 12 ? TipoEdad.GALLO : TipoEdad.POLLO), [currentGalloForm.ageMonths]);
-    const gallosByCuerda = useMemo(() => {
-        const grouped = new Map<string, Gallo[]>();
-        (gallos || []).forEach(gallo => {
-            const list = grouped.get(gallo.cuerdaId) || [];
-            list.push(gallo);
-            grouped.set(gallo.cuerdaId, list);
-        });
-        return grouped;
-    }, [gallos]);
-
-    useEffect(() => {
-        if (isOpen) {
-            if (gallo) { // Single Edit Mode
-                setSingleForm({
-                    ...gallo
-                });
-            } else { // Bulk Add Mode Reset
-                setSelectedCuerdaId('');
-                setActiveTabCuerdaId('');
-                setStagedGallos({});
-                setCurrentGalloForm(initialGalloFormState);
-            }
-        }
-    }, [isOpen, gallo]);
-    
-    const handleSingleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!singleForm.cuerdaId || !gallo) return;
-
-        if (!singleForm.marca || !singleForm.ageMonths) {
-            alert("Debe seleccionar una Marca y una Edad para el gallo.");
-            return;
-        }
-
-        onSaveSingle({ ...singleForm, marca: Number(singleForm.marca) }, gallo.id);
-        onClose();
-    };
-
-    const handleCuerdaSelectionChange = (baseCuerdaId: string) => {
-        setSelectedCuerdaId(baseCuerdaId);
-        setActiveTabCuerdaId(baseCuerdaId);
-        setStagedGallos({});
-        setCurrentGalloForm({ ...initialGalloFormState, cuerdaId: baseCuerdaId });
-    };
-
-    const handleTabClick = (cuerdaId: string) => {
-        setActiveTabCuerdaId(cuerdaId);
-        setCurrentGalloForm({ ...initialGalloFormState, cuerdaId });
-    };
-
-    const handleBulkFormChange = (field: keyof GalloBulkFormData, value: string | number) => {
-        const newFormState = { ...currentGalloForm, [field]: String(value) };
-        if (field === 'marca') {
-            const marcaValue = String(value);
-            const ageOptions = AGE_OPTIONS_BY_MARCA[marcaValue] || [];
-            if (ageOptions.length === 1) {
-                newFormState.ageMonths = String(ageOptions[0].ageMonths);
-            } else {
-                newFormState.ageMonths = ''; 
-            }
-        }
-        setCurrentGalloForm(newFormState);
-    };
-    
-    const handleAddStagedGallo = () => {
-        const existingCount = gallosByCuerda.get(activeTabCuerdaId)?.length || 0;
-        const stagedCount = (stagedGallos[activeTabCuerdaId] || []).length;
-        const totalCount = existingCount + stagedCount;
-        const limit = torneo.roostersPerTeam;
-
-        if (limit > 0 && totalCount >= limit) {
-            const cuerdaName = cuerdas.find(c => c.id === activeTabCuerdaId)?.name || 'Este frente';
-            alert(`${cuerdaName} ha alcanzado el límite de ${limit} gallos.`);
-            return;
-        }
-        
-        if (!currentGalloForm.marca || !currentGalloForm.ageMonths) {
-            alert("Debe seleccionar una Marca y una Edad para el gallo.");
-            return;
-        }
-
-        const newGalloData: Omit<Gallo, 'id' | 'tipoEdad'> = {
-            ringId: currentGalloForm.ringId,
-            color: currentGalloForm.color,
-            cuerdaId: activeTabCuerdaId,
-            weight: currentGalloForm.weight,
-            markingId: currentGalloForm.markingId,
-            tipoGallo: currentGalloForm.tipoGallo,
-            ageMonths: Number(currentGalloForm.ageMonths),
-            marca: Number(currentGalloForm.marca),
-        };
-
-        setStagedGallos(prev => ({
-            ...prev,
-            [activeTabCuerdaId]: [...(prev[activeTabCuerdaId] || []), newGalloData]
-        }));
-        setCurrentGalloForm({ ...initialGalloFormState, cuerdaId: activeTabCuerdaId });
-    };
-
-    const handleDeleteStagedGallo = (indexToDelete: number) => {
-        setStagedGallos(prev => ({
-            ...prev,
-            [activeTabCuerdaId]: (prev[activeTabCuerdaId] || []).filter((_, index) => index !== indexToDelete)
-        }));
-    };
-
-    const handleBulkSubmit = () => {
-        const allGallos = Object.values(stagedGallos).flat();
-        onSaveBulk(allGallos);
-        onClose();
-    };
-
-    const groupedBaseCuerdas = useMemo(() => {
-        const groups = new Map<string, Cuerda[]>();
-        cuerdas.forEach(c => {
-            const baseName = c.name.replace(/\s\(F\d+\)$/, '').trim();
-            if (!groups.has(baseName)) {
-                groups.set(baseName, []);
-            }
-            groups.get(baseName)!.push(c);
-        });
-        
-        return Array.from(groups.entries()).map(([baseName, fronts]) => {
-            fronts.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-            const frontLabels = fronts.map(f => f.name.match(/\(F\d+\)/)?.[0] || '').join(' ');
-            return { id: fronts[0].id, displayText: `${baseName} ${frontLabels}`.trim() };
-        }).sort((a,b) => a.displayText.localeCompare(b.displayText));
-    }, [cuerdas]);
-
-    const frontsForSelectedCuerda = useMemo(() => {
-        if (!selectedCuerdaId) return [];
-        const selected = cuerdas.find(c => c.id === selectedCuerdaId);
-        if (!selected) return [];
-        const baseName = selected.name.replace(/\s\(F\d+\)$/, '').trim();
-        return cuerdas.filter(c => c.name.replace(/\s\(F\d+\)$/, '').trim() === baseName)
-            .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-    }, [selectedCuerdaId, cuerdas]);
-
-    // Moved hook out of renderSingleEditForm to fix conditional hook rendering error
-    const ageOptions = useMemo(() => AGE_OPTIONS_BY_MARCA[String(singleForm.marca)] || [], [singleForm.marca]);
-
-    const renderSingleEditForm = () => {
-        return (
-            <form onSubmit={handleSingleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <InputField label="ID del Anillo" value={singleForm.ringId || ''} onChange={e => setSingleForm(p => ({...p, ringId: e.target.value}))} required />
-                    <InputField label="Color del Gallo" value={singleForm.color || ''} onChange={e => setSingleForm(p => ({...p, color: e.target.value}))} required />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Cuerda</label>
-                    <select value={singleForm.cuerdaId} onChange={e => setSingleForm(p => ({...p, cuerdaId: e.target.value}))} required className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition">
-                        <option value="" disabled>Seleccionar...</option>
-                        {[...cuerdas].sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric: true})).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </select>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <LbsOzInput label="Peso (Lb.Oz)" value={singleForm.weight || 0} onChange={v => setSingleForm(p => ({...p, weight: v}))} />
-                     <InputField label="Tipo (Pollo/Gallo)" value={singleEditTipoEdad} disabled />
-                </div>
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Marca</label>
-                        <select value={singleForm.marca || ''} onChange={e => {
-                            const newMarca = e.target.value;
-                            const options = AGE_OPTIONS_BY_MARCA[newMarca] || [];
-                            setSingleForm(p => ({ ...p, marca: Number(newMarca), ageMonths: options.length > 0 ? options[0].ageMonths : 0 }));
-                         }} required className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition">
-                            <option value="" disabled>Seleccionar...</option>
-                            {Object.keys(AGE_OPTIONS_BY_MARCA).sort((a,b) => Number(a) - Number(b)).map(m => <option key={m} value={m}>Marca {m}</option>)}
-                        </select>
-                    </div>
-                    <div>
-                         <label className="block text-sm font-medium text-gray-400 mb-1">Edad</label>
-                         <select value={singleForm.ageMonths || ''} onChange={e => setSingleForm(p => ({...p, ageMonths: Number(e.target.value)}))} required disabled={!singleForm.marca || ageOptions.length <= 1} className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition disabled:bg-gray-600">
-                             <option value="" disabled>Seleccionar...</option>
-                             {ageOptions.map(opt => <option key={opt.ageMonths} value={opt.ageMonths}>{opt.displayText}</option>)}
-                         </select>
-                    </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Fenotipo</label>
-                        <select value={singleForm.tipoGallo} onChange={e => setSingleForm(p => ({...p, tipoGallo: e.target.value as TipoGallo}))} required className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition">
-                            {Object.values(TipoGallo).map(t => <option key={t} value={t}>{t}</option>)}
-                        </select>
-                    </div>
-                    <InputField label="Número de Placa (Marcaje)" value={singleForm.markingId} onChange={e => setSingleForm(p => ({...p, markingId: e.target.value}))} required />
-                </div>
-                <div className="flex justify-end pt-4 space-x-2 border-t border-gray-700 mt-6">
-                    <button type="button" onClick={onClose} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Cancelar</button>
-                    <button type="submit" className="bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-2 px-4 rounded-lg">Guardar Cambios</button>
-                </div>
-            </form>
-        )
-    };
-
-    const renderBulkAddForm = () => {
-      const ageOptionsForBulk = AGE_OPTIONS_BY_MARCA[currentGalloForm.marca] || [];
-      return (
-        <div className="space-y-4">
-            <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Cuerda</label>
-                <select value={selectedCuerdaId} onChange={e => handleCuerdaSelectionChange(e.target.value)} required className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition">
-                    <option value="" disabled>Seleccionar...</option>
-                    {groupedBaseCuerdas.map(group => (<option key={group.id} value={group.id}>{group.displayText}</option>))}
-                </select>
-            </div>
-
-            {selectedCuerdaId && (
-                <div>
-                    <div className="flex border-b border-gray-600 mb-4 flex-wrap">
-                        {frontsForSelectedCuerda.map((front, index) => {
-                            const existingCount = gallosByCuerda.get(front.id)?.length || 0;
-                            const stagedCount = stagedGallos[front.id]?.length || 0;
-                            const totalCount = existingCount + stagedCount;
-                            const limit = torneo.roostersPerTeam;
-                            const tabText = limit > 0 ? `F${index + 1} (${totalCount}/${limit})` : `F${index + 1} (${totalCount})`;
-                            return (
-                                <button key={front.id} onClick={() => handleTabClick(front.id)} className={`py-2 px-4 text-sm font-medium transition-colors ${activeTabCuerdaId === front.id ? 'border-b-2 border-amber-500 text-amber-400' : 'text-gray-400 hover:text-white'}`}>
-                                    {tabText}
-                                </button>
-                            );
-                        })}
-                    </div>
-                    
-                    <div className="mb-4 space-y-2 max-h-40 overflow-y-auto pr-2">
-                        {(stagedGallos[activeTabCuerdaId] || []).map((g, index) => (
-                            <div key={index} className="flex items-center justify-between bg-gray-700/50 p-2 rounded-lg text-sm">
-                                <div><span className="font-bold">{g.color}</span> ({g.ringId})</div>
-                                <div className="flex items-center space-x-2">
-                                    <span>{formatWeightLbsOz(g.weight, true)} / {g.ageMonths}m</span>
-                                    <button onClick={() => handleDeleteStagedGallo(index)} className="p-1 text-gray-400 hover:text-red-500"><TrashIcon className="w-4 h-4"/></button>
-                                </div>
-                            </div>
-                        ))}
-                         {(stagedGallos[activeTabCuerdaId]?.length || 0) === 0 && <p className="text-gray-500 text-center text-sm py-2">Aún no hay gallos para este frente.</p>}
-                    </div>
-
-                    {(() => {
-                        const existingCount = gallosByCuerda.get(activeTabCuerdaId)?.length || 0;
-                        const stagedCount = (stagedGallos[activeTabCuerdaId] || []).length;
-                        const isLimitReached = torneo.roostersPerTeam > 0 && (existingCount + stagedCount) >= torneo.roostersPerTeam;
-                        
-                        return (
-                            <div className="p-4 bg-gray-900/50 rounded-lg space-y-4">
-                                <h4 className="font-bold text-amber-400">Añadir Gallo al Frente</h4>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <InputField label="ID del Anillo" value={currentGalloForm.ringId} onChange={e => handleBulkFormChange('ringId', e.target.value)} required disabled={isLimitReached}/>
-                                    <InputField label="Color del Gallo" value={currentGalloForm.color} onChange={e => handleBulkFormChange('color', e.target.value)} required disabled={isLimitReached}/>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <LbsOzInput label="Peso (Lb.Oz)" value={currentGalloForm.weight} onChange={v => handleBulkFormChange('weight', v)} disabled={isLimitReached}/>
-                                    <InputField label="Tipo (Pollo/Gallo)" value={bulkAddTipoEdad} disabled />
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                     <div>
-                                        <label className="block text-sm font-medium text-gray-400 mb-1">Marca</label>
-                                        <select value={currentGalloForm.marca} onChange={e => handleBulkFormChange('marca', e.target.value)} required className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition" disabled={isLimitReached}>
-                                            <option value="" disabled>Seleccionar...</option>
-                                            {Object.keys(AGE_OPTIONS_BY_MARCA).sort((a,b) => Number(a) - Number(b)).map(m => <option key={m} value={m}>Marca {m}</option>)}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-400 mb-1">Edad</label>
-                                        <select value={currentGalloForm.ageMonths} onChange={e => handleBulkFormChange('ageMonths', e.target.value)} required disabled={isLimitReached || !currentGalloForm.marca || ageOptionsForBulk.length <= 1} className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition disabled:bg-gray-600">
-                                            <option value="" disabled>Seleccionar...</option>
-                                            {ageOptionsForBulk.map(opt => <option key={opt.ageMonths} value={opt.ageMonths}>{opt.displayText}</option>)}
-                                        </select>
-                                    </div>
-                                </div>
-                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-400 mb-1">Fenotipo</label>
-                                        <select value={currentGalloForm.tipoGallo} onChange={e => handleBulkFormChange('tipoGallo', e.target.value as TipoGallo)} required className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition" disabled={isLimitReached}>
-                                            {Object.values(TipoGallo).map(t => <option key={t} value={t}>{t}</option>)}
-                                        </select>
-                                    </div>
-                                    <InputField label="Número de Placa" value={currentGalloForm.markingId} onChange={e => handleBulkFormChange('markingId', e.target.value)} required disabled={isLimitReached}/>
-                                </div>
-                                <button type="button" onClick={handleAddStagedGallo} disabled={isLimitReached || !currentGalloForm.ringId || !currentGalloForm.color || !currentGalloForm.weight} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed">
-                                    {isLimitReached ? 'Límite de gallos alcanzado' : 'Añadir Gallo a este Frente'}
-                                </button>
-                            </div>
-                        );
-                    })()}
-                </div>
-            )}
-            
-            <div className="flex justify-end pt-4 space-x-2 border-t border-gray-700 mt-6">
-                <button type="button" onClick={onClose} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Cancelar</button>
-                <button type="button" onClick={handleBulkSubmit} className="bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-2 px-4 rounded-lg">Guardar Todo y Cerrar</button>
-            </div>
-        </div>
-      );
-    };
-
-    return (
-        <Modal isOpen={isOpen} onClose={onClose} title={gallo ? 'Editar Gallo' : 'Añadir Gallos'} size="wide">
-            {gallo ? renderSingleEditForm() : renderBulkAddForm()}
-        </Modal>
-    );
-};
-
 const PrintablePlanilla: React.FC<{ torneo: Torneo }> = ({ torneo }) => (
     <div id="printable-planilla" className="p-8 space-y-6 bg-white text-black text-lg">
         <div className="text-center border-b-2 border-black pb-4">
@@ -562,47 +127,43 @@ const PrintablePlanilla: React.FC<{ torneo: Torneo }> = ({ torneo }) => (
 );
 
 const TournamentRulesForm: React.FC<{
-    initialTorneo: Torneo;
+    torneo: Torneo;
     cuerdas: Cuerda[];
     onUpdateTorneo: (updatedTorneo: Torneo) => void;
     onPrintPlanilla: () => void;
-}> = React.memo(({ initialTorneo, cuerdas, onUpdateTorneo, onPrintPlanilla }) => {
+}> = React.memo(({ torneo, cuerdas, onUpdateTorneo, onPrintPlanilla }) => {
     
-    const [formData, setFormData] = useState(initialTorneo);
     const [exceptionCuerda1, setExceptionCuerda1] = useState('');
     const [exceptionCuerda2, setExceptionCuerda2] = useState('');
 
-    useEffect(() => {
-        setFormData(initialTorneo);
-    }, [initialTorneo]);
+    const handleUpdate = (field: keyof Torneo, value: any) => {
+        let newTorneoData = { ...torneo, [field]: value };
 
-    const handleBlur = () => {
-        onUpdateTorneo(formData);
-    };
+        if (field === 'minWeight') {
+            const clampedValue = Math.max(MIN_TOURNAMENT_WEIGHT, value);
+            newTorneoData.minWeight = clampedValue > newTorneoData.maxWeight ? newTorneoData.maxWeight : clampedValue;
+        }
+        if (field === 'maxWeight') {
+             const clampedValue = Math.min(MAX_TOURNAMENT_WEIGHT, value);
+             newTorneoData.maxWeight = clampedValue < newTorneoData.minWeight ? newTorneoData.minWeight : clampedValue;
+        }
 
-    const handleChange = (field: keyof Torneo, value: any) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-    };
-
-    const handleUpdate = (newFormData: Torneo) => {
-        setFormData(newFormData);
-        onUpdateTorneo(newFormData);
+        onUpdateTorneo(newTorneoData);
     };
     
     const handleAddException = () => {
         if (exceptionCuerda1 && exceptionCuerda2 && exceptionCuerda1 !== exceptionCuerda2) {
             const newException = { cuerda1Id: exceptionCuerda1, cuerda2Id: exceptionCuerda2 };
-            const newFormData = { ...formData, exceptions: [...formData.exceptions, newException] };
-            handleUpdate(newFormData);
+            const newExceptions = [...torneo.exceptions, newException];
+            onUpdateTorneo({ ...torneo, exceptions: newExceptions });
             setExceptionCuerda1('');
             setExceptionCuerda2('');
         }
     };
 
     const handleRemoveException = (index: number) => {
-        const newExceptions = formData.exceptions.filter((_, i) => i !== index);
-        const newFormData = { ...formData, exceptions: newExceptions };
-        handleUpdate(newFormData);
+        const newExceptions = torneo.exceptions.filter((_, i) => i !== index);
+        onUpdateTorneo({ ...torneo, exceptions: newExceptions });
     };
 
     const baseCuerdas = useMemo(() =>
@@ -617,9 +178,9 @@ const TournamentRulesForm: React.FC<{
     return (
         <div className="space-y-4">
             <h4 className="text-md font-semibold text-amber-300">Información del Torneo</h4>
-            <InputField label="Nombre del Torneo" value={formData.name} onChange={e => handleChange('name', e.target.value)} onBlur={handleBlur} />
-            <InputField label="Responsable del Torneo" value={formData.tournamentManager || ''} onChange={e => handleChange('tournamentManager', e.target.value)} onBlur={handleBlur} />
-            <InputField type="date" label="Fecha" value={formData.date} onChange={e => handleChange('date', e.target.value)} onBlur={handleBlur} />
+            <InputField label="Nombre del Torneo" value={torneo.name} onChange={e => handleUpdate('name', e.target.value)} />
+            <InputField label="Responsable del Torneo" value={torneo.tournamentManager || ''} onChange={e => handleUpdate('tournamentManager', e.target.value)} />
+            <InputField type="date" label="Fecha" value={torneo.date} onChange={e => handleUpdate('date', e.target.value)} />
             <div className="pt-2">
                 <button onClick={onPrintPlanilla} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
                     Imprimir Planilla de Ingreso
@@ -630,30 +191,37 @@ const TournamentRulesForm: React.FC<{
            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <LbsOzInput 
                 label="Tolerancia de Peso (± Onza)" 
-                value={formData.weightTolerance} 
-                onChange={v => handleChange('weightTolerance', v)} 
-                onBlur={handleBlur} 
+                value={torneo.weightTolerance} 
+                onChange={v => handleUpdate('weightTolerance', v)} 
               />
-              <InputField type="number" label="Tolerancia de Meses (±) (solo pollos)" value={formData.ageToleranceMonths} onChange={e => handleChange('ageToleranceMonths', parseInt(e.target.value) || 0)} onBlur={handleBlur} min="0"/>
+              <InputField type="number" label="Tolerancia de Meses (±) (solo pollos)" value={torneo.ageToleranceMonths} onChange={e => handleUpdate('ageToleranceMonths', parseInt(e.target.value) || 0)} min="0"/>
            </div>
            
            <h4 className="text-md font-semibold text-amber-300 mt-4 border-t border-gray-700 pt-4">Pesos Permitidos</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-               <LbsOzInput label="Mínimo (Lb.Oz)" value={formData.minWeight} onChange={v => handleChange('minWeight', v)} onBlur={handleBlur} />
-               <LbsOzInput label="Máximo (Lb.Oz)" value={formData.maxWeight} onChange={v => handleChange('maxWeight', v)} onBlur={handleBlur} />
+               <LbsOzInput 
+                    label="Mínimo (Lb.Oz)" 
+                    value={torneo.minWeight} 
+                    onChange={v => handleUpdate('minWeight', v)} 
+                />
+               <LbsOzInput 
+                    label="Máximo (Lb.Oz)" 
+                    value={torneo.maxWeight} 
+                    onChange={v => handleUpdate('maxWeight', v)} 
+                />
            </div>
 
            <div className="border-t border-gray-700 pt-4 mt-4">
                 <h4 className="text-md font-semibold text-amber-300">Reglas del Torneo por Frentes</h4>
                 <div className="space-y-4 mt-2">
-                    <InputField type="number" label="Gallos por Frente" value={formData.roostersPerTeam} onChange={e => handleChange('roostersPerTeam', parseInt(e.target.value) || 0)} onBlur={handleBlur} min="0"/>
-                    <InputField type="number" label="Puntos por Victoria" value={formData.pointsForWin} onChange={e => handleChange('pointsForWin', parseInt(e.target.value) || 0)} onBlur={handleBlur} min="0"/>
-                    <InputField type="number" label="Puntos por Empate" value={formData.pointsForDraw} onChange={e => handleChange('pointsForDraw', parseInt(e.target.value) || 0)} onBlur={handleBlur} min="0"/>
+                    <InputField type="number" label="Gallos por Frente" value={torneo.roostersPerTeam} onChange={e => handleUpdate('roostersPerTeam', parseInt(e.target.value) || 0)} min="0"/>
+                    <InputField type="number" label="Puntos por Victoria" value={torneo.pointsForWin} onChange={e => handleUpdate('pointsForWin', parseInt(e.target.value) || 0)} min="0"/>
+                    <InputField type="number" label="Puntos por Empate" value={torneo.pointsForDraw} onChange={e => handleUpdate('pointsForDraw', parseInt(e.target.value) || 0)} min="0"/>
                 
                     <div>
                         <label className="block text-sm font-medium text-gray-400 mb-1">Excepciones (Cuerdas que no pelean entre sí)</label>
                         <div className="space-y-2">
-                           {formData.exceptions.map((ex, index) => (
+                           {torneo.exceptions.map((ex, index) => (
                                 <div key={index} className="flex items-center justify-between bg-gray-700/50 p-2 rounded-lg text-sm">
                                     <span>{getBaseCuerdaNameById(ex.cuerda1Id)} vs {getBaseCuerdaNameById(ex.cuerda2Id)}</span>
                                     <button onClick={() => handleRemoveException(index)} className="p-1 text-gray-400 hover:text-red-500"><TrashIcon className="w-4 h-4"/></button>
@@ -692,9 +260,10 @@ interface SetupScreenProps {
     onAddBulkGallos: (gallosData: Omit<Gallo, 'id' | 'tipoEdad'>[]) => void;
     onDeleteGallo: (galloId: string) => void;
     isMatchmaking: boolean;
+    onFullReset: () => void;
 }
 
-const SetupScreen: React.FC<SetupScreenProps> = ({ cuerdas, gallos, torneo, onUpdateTorneo, onStartMatchmaking, onSaveCuerda, onDeleteCuerda, onSaveGallo, onAddBulkGallos, onDeleteGallo, isMatchmaking }) => {
+const SetupScreen: React.FC<SetupScreenProps> = ({ cuerdas, gallos, torneo, onUpdateTorneo, onStartMatchmaking, onSaveCuerda, onDeleteCuerda, onSaveGallo, onAddBulkGallos, onDeleteGallo, isMatchmaking, onFullReset }) => {
     const [isCuerdaModalOpen, setCuerdaModalOpen] = useState(false);
     const [isGalloModalOpen, setGalloModalOpen] = useState(false);
     
@@ -763,14 +332,29 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ cuerdas, gallos, torneo, onUp
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 <div className="lg:col-span-1 space-y-6">
-                    <SectionCard icon={<SettingsIcon />} title="Reglas Del Torneo">
-                       <TournamentRulesForm
-                           initialTorneo={torneo}
-                           cuerdas={cuerdas}
-                           onUpdateTorneo={onUpdateTorneo}
-                           onPrintPlanilla={handlePrintPlanilla}
-                       />
-                    </SectionCard>
+                     <div className="bg-gray-800/50 rounded-2xl shadow-lg border border-gray-700 p-4 sm:p-6 relative">
+                        <div className="flex justify-between items-center mb-4">
+                            <div className="flex items-center space-x-3">
+                                <div className="text-amber-400 w-6 h-6"><SettingsIcon /></div>
+                                <h3 className="text-lg sm:text-xl font-bold text-white">Reglas Del Torneo</h3>
+                            </div>
+                            <button
+                                onClick={onFullReset}
+                                title="Reiniciar aplicación y borrar todos los datos"
+                                className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                            >
+                                <RepeatIcon className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div>
+                            <TournamentRulesForm
+                                torneo={torneo}
+                                cuerdas={cuerdas}
+                                onUpdateTorneo={onUpdateTorneo}
+                                onPrintPlanilla={handlePrintPlanilla}
+                            />
+                        </div>
+                    </div>
                 </div>
                 
                 <div className="lg:col-span-2 space-y-6">
@@ -847,7 +431,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ cuerdas, gallos, torneo, onUp
                         >
                            {isMatchmaking ? (
                                 <>
-                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>

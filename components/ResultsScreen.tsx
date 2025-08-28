@@ -25,12 +25,13 @@ interface ResultsScreenProps {
     torneo: Torneo;
     cuerdas: Cuerda[];
     onReset: () => void;
+    onBack: () => void;
     tournamentPhase: 'individual' | 'finished';
     onStartIndividualFights: () => void;
     hasIndividualFights: boolean;
 }
 
-const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, onReset, tournamentPhase, onStartIndividualFights, hasIndividualFights }) => {
+const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, onReset, onBack, tournamentPhase, onStartIndividualFights, hasIndividualFights }) => {
     
     const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'points', direction: 'desc' });
     const [expandedCuerdas, setExpandedCuerdas] = useState<string[]>([]);
@@ -269,7 +270,8 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
                 </div>
             </div>
 
-            <div className="text-center mt-8 print-hide">
+            <div className="flex justify-center items-center space-x-4 mt-8 print-hide">
+                 <button onClick={onBack} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-8 rounded-lg text-lg">Atrás</button>
                  {tournamentPhase === 'individual' && hasIndividualFights ? (
                     <button onClick={onStartIndividualFights} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg">
                         Iniciar Peleas Individuales

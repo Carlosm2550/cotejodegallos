@@ -1,10 +1,9 @@
 
 
-
 import React, { useState } from 'react';
 import { MatchmakingResults, Torneo, Cuerda, Pelea, Gallo } from '../types';
-import EditLeftoverGalloModal from './ConflictModal';
-import { PencilIcon, WarningIcon } from './Icons';
+import GalloFormModal from './GalloFormModal';
+import { PencilIcon } from './Icons';
 
 // --- Lbs.Oz Weight Conversion Utilities ---
 const OUNCES_PER_POUND = 16;
@@ -27,14 +26,14 @@ interface MatchmakingScreenProps {
     results: MatchmakingResults;
     torneo: Torneo;
     cuerdas: Cuerda[];
+    gallos: Gallo[];
     onStartTournament: () => void;
     onBack: () => void;
     onCreateManualFight: (roosterAId: string, roosterBId: string) => void;
     onUpdateGallo: (galloData: Omit<Gallo, 'id' | 'tipoEdad'>, currentGalloId: string) => void;
-    onDeleteCuerda: (cuerdaId: string) => void;
 }
 
-const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, cuerdas, onStartTournament, onBack, onCreateManualFight, onUpdateGallo, onDeleteCuerda }) => {
+const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, cuerdas, gallos, onStartTournament, onBack, onCreateManualFight, onUpdateGallo }) => {
     
     const [selectedRoosters, setSelectedRoosters] = useState<string[]>([]);
     const [isEditModalOpen, setEditModalOpen] = useState(false);
@@ -68,13 +67,9 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
 
     const handleUpdateGalloClick = (galloData: Omit<Gallo, 'id' | 'tipoEdad'>, currentGalloId: string) => {
         onUpdateGallo(galloData, currentGalloId);
+        setEditModalOpen(false); // Close modal on save
     };
-
-    const handleDeleteCuerdaClick = (cuerdaId: string) => {
-        onDeleteCuerda(cuerdaId);
-    };
-
-
+    
     const handlePrint = () => {
         document.body.classList.add('printing-cartelera');
         window.print();
@@ -82,20 +77,25 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
     };
 
     const renderPelea = (pelea: Pelea, index: number) => (
-        <div key={pelea.id} className="bg-gray-700/50 rounded-lg p-3 flex items-center justify-between text-sm fight-card">
-            <div className="w-1/12 text-center text-gray-400 font-bold">{index + 1}</div>
-            <div className="w-5/12 text-right pr-2">
-                <p className="font-bold text-white">{pelea.roosterA.color}</p>
-                <p className="text-xs text-gray-400">{getCuerdaName(pelea.roosterA.cuerdaId)}</p>
-                 <p className="text-xs font-mono">{formatWeightLbsOz(pelea.roosterA.weight)} / {pelea.roosterA.ageMonths || 'N/A'}m / {pelea.roosterA.tipoGallo}</p>
-                <p className="text-xs text-gray-500 font-mono">A:{pelea.roosterA.ringId} M:{pelea.roosterA.markingId}</p>
+        <div key={pelea.id} className="bg-gray-700/50 rounded-lg p-6 flex items-center justify-between fight-card">
+            <div className="w-1/12 text-center text-gray-400 font-bold text-3xl">{index + 1}</div>
+            
+            {/* Rooster A */}
+            <div className="w-5/12 text-right pr-4 space-y-2">
+                <p className="font-bold text-4xl text-amber-400 truncate">{getCuerdaName(pelea.roosterA.cuerdaId)}</p>
+                <p className="font-semibold text-white text-2xl">{pelea.roosterA.color}</p>
+                <p className="text-lg font-mono text-gray-300">{formatWeightLbsOz(pelea.roosterA.weight)} / {pelea.roosterA.ageMonths || 'N/A'}m / {pelea.roosterA.tipoGallo}</p>
+                <p className="text-base text-gray-500 font-mono">A:{pelea.roosterA.ringId} M:{pelea.roosterA.markingId}</p>
             </div>
-            <div className="w-1/12 text-center text-red-500 font-extrabold">VS</div>
-            <div className="w-5/12 text-left pl-2">
-                <p className="font-bold text-white">{pelea.roosterB.color}</p>
-                <p className="text-xs text-gray-400">{getCuerdaName(pelea.roosterB.cuerdaId)}</p>
-                 <p className="text-xs font-mono">{formatWeightLbsOz(pelea.roosterB.weight)} / {pelea.roosterB.ageMonths || 'N/A'}m / {pelea.roosterB.tipoGallo}</p>
-                <p className="text-xs text-gray-500 font-mono">A:{pelea.roosterB.ringId} M:{pelea.roosterB.markingId}</p>
+
+            <div className="w-1/12 text-center text-red-500 font-extrabold text-5xl">VS</div>
+            
+            {/* Rooster B */}
+            <div className="w-5/12 text-left pl-4 space-y-2">
+                <p className="font-bold text-4xl text-amber-400 truncate">{getCuerdaName(pelea.roosterB.cuerdaId)}</p>
+                <p className="font-semibold text-white text-2xl">{pelea.roosterB.color}</p>
+                <p className="text-lg font-mono text-gray-300">{formatWeightLbsOz(pelea.roosterB.weight)} / {pelea.roosterB.ageMonths || 'N/A'}m / {pelea.roosterB.tipoGallo}</p>
+                <p className="text-base text-gray-500 font-mono">A:{pelea.roosterB.ringId} M:{pelea.roosterB.markingId}</p>
             </div>
         </div>
     );
@@ -172,7 +172,7 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
                                         const baseIdOfSelected = cuerdaOfSelected?.baseCuerdaId || cuerdaOfSelected?.id;
                                         const baseIdOfCurrent = cuerdaOfCurrent?.baseCuerdaId || cuerdaOfCurrent?.id;
                                         
-                                        if ((baseIdOfSelected && baseIdOfSelected === baseIdOfCurrent) || selectedGallo.tipoEdad !== gallo.tipoEdad) {
+                                        if (baseIdOfSelected && baseIdOfSelected === baseIdOfCurrent) {
                                             isDisabled = true;
                                         }
                                     }
@@ -195,8 +195,8 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
                                                 className="w-5 h-5 rounded text-amber-600 bg-gray-900 border-gray-500 focus:ring-amber-500 focus:ring-offset-gray-800"
                                             />
                                             <div className="ml-3 flex-grow overflow-hidden">
-                                                <p className="font-bold text-white truncate">{gallo.color} <span className="text-xs text-gray-400 font-normal">({gallo.ringId})</span></p>
-                                                <p className="text-sm text-gray-300 truncate">{getCuerdaName(gallo.cuerdaId)}</p>
+                                                <p className="font-bold text-amber-400 truncate">{getCuerdaName(gallo.cuerdaId)}</p>
+                                                <p className="text-white truncate">{gallo.color} <span className="text-xs text-gray-400 font-normal">({gallo.ringId})</span></p>
                                                 {isUnderWeight && <span className="text-xs font-bold text-yellow-400 block">Peso Bajo</span>}
                                                 {isOverWeight && <span className="text-xs font-bold text-red-400 block">Peso Alto</span>}
                                             </div>
@@ -240,24 +240,28 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
                     )}
                 </div>
             )}
-
-
-            <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 pt-4">
-                <button onClick={onBack} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-6 rounded-lg w-full sm:w-auto">Volver a Configuración</button>
-                <button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg w-full sm:w-auto">Imprimir PDF</button>
-                <button onClick={onStartTournament} disabled={results.mainFights.length === 0 && results.individualFights.length === 0} className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg w-full sm:w-auto disabled:bg-gray-500 disabled:cursor-not-allowed">
-                    Iniciar Torneo en Vivo
-                </button>
+            <div className="flex justify-between items-center mt-8 print-hide">
+                <button onClick={onBack} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded-lg">Atrás</button>
+                <div>
+                     <button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg mr-4">
+                        Imprimir PDF
+                    </button>
+                    <button onClick={onStartTournament} className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg text-lg">
+                        Comenzar Torneo
+                    </button>
+                </div>
             </div>
-
-            {editingGallo && (
-                 <EditLeftoverGalloModal
+            
+            {isEditModalOpen && (
+                <GalloFormModal 
                     isOpen={isEditModalOpen}
                     onClose={() => setEditModalOpen(false)}
+                    onSaveSingle={handleUpdateGalloClick}
+                    onSaveBulk={() => {}} // Not used in this context
                     gallo={editingGallo}
                     cuerdas={cuerdas}
-                    onUpdate={handleUpdateGalloClick}
-                    onDeleteCuerda={handleDeleteCuerdaClick}
+                    gallos={gallos}
+                    torneo={torneo}
                 />
             )}
         </div>

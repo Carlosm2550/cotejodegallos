@@ -1,10 +1,5 @@
-
-
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Pelea, Torneo, Cuerda, Gallo } from '../types';
-import { PlayIcon, PauseIcon, RepeatIcon } from './Icons';
-
 
 // --- Lbs.Oz Weight Conversion Utilities ---
 const OUNCES_PER_POUND = 16;
@@ -26,12 +21,15 @@ interface LiveFightScreenProps {
   peleas: Pelea[];
   onFinishFight: (fightId: string, winner: 'A' | 'B' | 'DRAW', duration: number) => void;
   onFinishTournament: () => void;
+  onBack: () => void;
 }
 
-const LiveFightScreen: React.FC<LiveFightScreenProps> = ({ peleas, onFinishFight, onFinishTournament }) => {
-  const [minutes, setMinutes] = useState(0);
-  const [seconds, setSeconds] = useState(0);
-
+const LiveFightScreen: React.FC<LiveFightScreenProps> = ({ peleas, onFinishFight, onFinishTournament, onBack }) => {
+  const [minutes, setMinutes] = useState('');
+  const [seconds, setSeconds] = useState('');
+  const minutesRef = useRef<HTMLInputElement>(null);
+  const secondsRef = useRef<HTMLInputElement>(null);
+  
   const [currentFightIndex, setCurrentFightIndex] = useState(0);
   const currentFight = peleas[currentFightIndex];
   
@@ -46,17 +44,49 @@ const LiveFightScreen: React.FC<LiveFightScreenProps> = ({ peleas, onFinishFight
   }, []);
 
   useEffect(() => {
-    // Reset timer for new fight
-    setMinutes(0);
-    setSeconds(0);
+    // Reset timer for new fight and focus
+    setMinutes('');
+    setSeconds('');
+    minutesRef.current?.focus();
   }, [currentFightIndex]);
 
+  const handleMinutesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 2);
+    setMinutes(value);
+    if (value.length === 2) {
+      secondsRef.current?.focus();
+      secondsRef.current?.select();
+    }
+  };
+
+  const handleSecondsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 2);
+    setSeconds(value);
+  };
+
+  const handleTimeBlur = (
+    value: string,
+    setValue: React.Dispatch<React.SetStateAction<string>>,
+    maxValue?: number
+  ) => {
+    if (value === '') {
+      return; // Keep it empty if the user leaves it empty
+    }
+    let numValue = parseInt(value, 10) || 0;
+    if (maxValue !== undefined && numValue > maxValue) {
+      numValue = maxValue;
+    }
+    setValue(String(numValue).padStart(2, '0'));
+  };
 
   const getCuerdaName = (id: string) => cuerdas.find(p => p.id === id)?.name || 'Desconocido';
 
   const handleFinishFight = (winner: 'A' | 'B' | 'DRAW') => {
     if (!currentFight) return;
-    const duration = (minutes * 60) + seconds;
+    
+    const minNum = parseInt(minutes, 10) || 0;
+    const secNum = parseInt(seconds, 10) || 0;
+    const duration = (minNum * 60) + Math.min(secNum, 59); // Ensure seconds are not > 59
     onFinishFight(currentFight.id, winner, duration);
     
     // Move to next fight or finish
@@ -67,8 +97,6 @@ const LiveFightScreen: React.FC<LiveFightScreenProps> = ({ peleas, onFinishFight
     }
   };
   
-  // This should not be rendered if peleas is empty, parent component handles this.
-  // But as a safeguard:
   if (!currentFight || !torneo) {
     return (
         <div className="text-center">
@@ -82,61 +110,84 @@ const LiveFightScreen: React.FC<LiveFightScreenProps> = ({ peleas, onFinishFight
   }
 
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-3xl font-bold text-white">Pelea #{currentFight.fightNumber}</h2>
-        <p className="text-gray-400 mt-1">Pelea {currentFightIndex + 1} de {peleas.length} en esta fase</p>
+    <div className="flex flex-col items-center justify-center min-h-[70vh] text-white p-4">
+      {/* Top Title Section */}
+      <div className="text-center mb-8">
+        <h2 className="text-5xl md:text-6xl font-extrabold tracking-tight text-amber-400">Pelea #{currentFight.fightNumber}</h2>
+        <p className="text-lg md:text-xl text-gray-400 mt-2">Pelea {currentFightIndex + 1} de {peleas.length} en esta fase</p>
       </div>
 
-      <div className="bg-gray-800/50 rounded-2xl shadow-lg border border-gray-700 p-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-            {/* Rooster A */}
-            <div className="text-center md:text-right">
-                 <h3 className="text-2xl font-bold text-white">{currentFight.roosterA.color}</h3>
-                 <p className="text-amber-400">{getCuerdaName(currentFight.roosterA.cuerdaId)}</p>
-                 <p className="text-gray-400">{formatRoosterDetails(currentFight.roosterA)}</p>
-            </div>
+      {/* Main Fight Display */}
+      <div className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-stretch gap-4 md:gap-8 mb-8">
+        
+        {/* Rooster A Panel (Left) */}
+        <div className="bg-blue-900/30 border-2 border-blue-600 rounded-2xl p-6 text-center md:text-right flex flex-col items-center md:items-end justify-center shadow-lg transform hover:scale-[1.02] transition-transform duration-300">
+            <p className="text-4xl md:text-5xl lg:text-6xl text-amber-400 font-bold break-words">{getCuerdaName(currentFight.roosterA.cuerdaId)}</p>
+            <h3 className="text-2xl lg:text-3xl font-semibold mt-2 text-white">{currentFight.roosterA.color}</h3>
+            <p className="text-xl lg:text-2xl text-gray-300 mt-4 font-mono">{formatRoosterDetails(currentFight.roosterA)}</p>
+        </div>
+        
+        {/* VS Separator */}
+        <div className="flex items-center justify-center">
+            <span className="text-6xl md:text-8xl font-black text-red-500 transform -rotate-6">VS</span>
+        </div>
 
-            {/* Manual Time Input */}
-            <div className="text-center space-y-4">
-                <p className="text-lg font-semibold text-gray-300">Duración de la Pelea</p>
-                <div className="flex justify-center items-center space-x-2">
-                    <input 
-                        type="number" 
-                        value={minutes}
-                        onChange={(e) => setMinutes(Math.max(0, parseInt(e.target.value) || 0))}
-                        className="w-20 bg-gray-700 border border-gray-600 text-white text-3xl font-mono text-center rounded-lg p-2 focus:ring-2 focus:ring-amber-500 outline-none"
-                    />
-                     <span className="text-3xl font-mono text-white">:</span>
-                    <input 
-                        type="number" 
-                        value={seconds}
-                        onChange={(e) => setSeconds(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
-                        className="w-20 bg-gray-700 border border-gray-600 text-white text-3xl font-mono text-center rounded-lg p-2 focus:ring-2 focus:ring-amber-500 outline-none"
-                    />
-                </div>
-                <div className="flex justify-center space-x-8 text-xs text-gray-400">
-                    <span>MIN</span>
-                    <span>SEG</span>
-                </div>
-            </div>
+        {/* Rooster B Panel (Right) */}
+         <div className="bg-red-900/30 border-2 border-red-600 rounded-2xl p-6 text-center md:text-left flex flex-col items-center md:items-start justify-center shadow-lg transform hover:scale-[1.02] transition-transform duration-300">
+            <p className="text-4xl md:text-5xl lg:text-6xl text-amber-400 font-bold break-words">{getCuerdaName(currentFight.roosterB.cuerdaId)}</p>
+            <h3 className="text-2xl lg:text-3xl font-semibold mt-2 text-white">{currentFight.roosterB.color}</h3>
+            <p className="text-xl lg:text-2xl text-gray-300 mt-4 font-mono">{formatRoosterDetails(currentFight.roosterB)}</p>
+        </div>
+      </div>
 
-            {/* Rooster B */}
-            <div className="text-center md:text-left">
-                 <h3 className="text-2xl font-bold text-white">{currentFight.roosterB.color}</h3>
-                 <p className="text-amber-400">{getCuerdaName(currentFight.roosterB.cuerdaId)}</p>
-                 <p className="text-gray-400">{formatRoosterDetails(currentFight.roosterB)}</p>
+       {/* Timer & Action Section */}
+      <div className="w-full max-w-4xl flex flex-col items-center gap-6">
+        {/* Timer */}
+        <div className="text-center space-y-2">
+            <p className="text-xl font-semibold text-gray-300">Duración de la Pelea</p>
+             <div className="flex justify-center items-center space-x-2">
+                <input 
+                    ref={minutesRef}
+                    type="text" 
+                    inputMode="numeric"
+                    value={minutes}
+                    onChange={handleMinutesChange}
+                    onBlur={() => handleTimeBlur(minutes, setMinutes)}
+                    className="w-24 md:w-28 bg-gray-900/50 border-2 border-gray-600 text-white text-6xl md:text-7xl font-mono text-center rounded-lg p-2 focus:ring-2 focus:ring-amber-500 outline-none"
+                    aria-label="Minutos"
+                    placeholder="00"
+                />
+                 <span className="text-6xl md:text-7xl font-mono text-gray-600 pb-2">:</span>
+                 <input 
+                    ref={secondsRef}
+                    type="text" 
+                    inputMode="numeric"
+                    value={seconds}
+                    onChange={handleSecondsChange}
+                    onBlur={() => handleTimeBlur(seconds, setSeconds, 59)}
+                    className="w-24 md:w-28 bg-gray-900/50 border-2 border-gray-600 text-white text-6xl md:text-7xl font-mono text-center rounded-lg p-2 focus:ring-2 focus:ring-amber-500 outline-none"
+                    aria-label="Segundos"
+                    placeholder="00"
+                />
+            </div>
+             <div className="flex justify-center items-center space-x-2 w-full pt-1">
+                <span className="text-xs text-gray-500 uppercase tracking-widest w-24 md:w-28 text-center">MIN</span>
+                <span className="w-4"></span>
+                <span className="text-xs text-gray-500 uppercase tracking-widest w-24 md:w-28 text-center">SEG</span>
             </div>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-gray-700 flex flex-col sm:flex-row justify-center items-center gap-4">
-           <button onClick={() => handleFinishFight('A')} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg w-full sm:w-auto">Gana {currentFight.roosterA.color}</button>
-           <button onClick={() => handleFinishFight('DRAW')} className="bg-gray-500 hover:bg-gray-400 text-white font-bold py-2 px-4 rounded-lg w-full sm:w-auto">Empate</button>
-           <button onClick={() => handleFinishFight('B')} className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg w-full sm:w-auto">Gana {currentFight.roosterB.color}</button>
+        {/* Win/Draw Buttons */}
+        <div className="w-full flex flex-col sm:flex-row justify-center items-center gap-4 mt-4">
+           <button onClick={() => handleFinishFight('A')} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 text-xl rounded-lg w-full sm:w-auto transform hover:scale-105 transition-transform duration-200">Gana {currentFight.roosterA.color}</button>
+           <button onClick={() => handleFinishFight('DRAW')} className="bg-gray-500 hover:bg-gray-400 text-white font-bold py-3 px-6 text-lg rounded-lg w-full sm:w-auto">Empate</button>
+           <button onClick={() => handleFinishFight('B')} className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 text-xl rounded-lg w-full sm:w-auto transform hover:scale-105 transition-transform duration-200">Gana {currentFight.roosterB.color}</button>
         </div>
       </div>
-       <div className="text-center print-hide">
-            <button onClick={onFinishTournament} className="text-gray-400 hover:text-white underline">Terminar Torneo Anticipadamente</button>
+
+       <div className="text-center mt-12 print-hide flex justify-center items-center space-x-4">
+            <button onClick={onBack} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded-lg">Atrás</button>
+            <button onClick={onFinishTournament} className="bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-6 rounded-lg">Terminar Torneo Anticipadamente</button>
         </div>
     </div>
   );
