@@ -32,10 +32,12 @@ interface MatchmakingScreenProps {
     onCreateManualFight: (roosterAId: string, roosterBId: string) => void;
     onUpdateGallo: (galloData: Omit<Gallo, 'id' | 'tipoEdad'>, currentGalloId: string) => void;
     isTournamentInProgress: boolean;
+    isTournamentFinished: boolean;
     onResumeTournament: () => void;
+    onGoToResults: () => void;
 }
 
-const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, cuerdas, gallos, onStartTournament, onBack, onCreateManualFight, onUpdateGallo, isTournamentInProgress, onResumeTournament }) => {
+const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, cuerdas, gallos, onStartTournament, onBack, onCreateManualFight, onUpdateGallo, isTournamentInProgress, isTournamentFinished, onResumeTournament, onGoToResults }) => {
     
     const [selectedRoosters, setSelectedRoosters] = useState<string[]>([]);
     const [isEditModalOpen, setEditModalOpen] = useState(false);
@@ -248,7 +250,11 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
                      <button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg mr-4">
                         Imprimir PDF
                     </button>
-                    {isTournamentInProgress ? (
+                    {isTournamentFinished ? (
+                        <button onClick={onGoToResults} className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-8 rounded-lg text-lg">
+                            Clasificación General
+                        </button>
+                    ) : isTournamentInProgress ? (
                         <button onClick={onResumeTournament} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg">
                             Volver a la Contienda
                         </button>

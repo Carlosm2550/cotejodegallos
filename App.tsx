@@ -417,6 +417,8 @@ const App: React.FC = () => {
                     onCreateManualFight={handleCreateManualFight}
                     onUpdateGallo={handleSaveGallo}
                     isTournamentInProgress={isTournamentInProgress}
+                    isTournamentFinished={tournamentPhase === 'finished'}
+                    onGoToResults={() => setScreen(Screen.RESULTS)}
                     onResumeTournament={handleResumeTournament}
                 />;
             case Screen.LIVE_FIGHT:
