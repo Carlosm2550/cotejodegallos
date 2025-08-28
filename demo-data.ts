@@ -113,7 +113,7 @@ const rawDemoData = [
     "Gallos": [
       {
         "ID del Anillo": "5555",
-        "Color del Gallo": "Diablo",
+        "Color del Gallo": "Martillo",
         "Peso": 3.05,
         "ID de Marcaje": "90909",
         "tipo de gallo": "Liso",
@@ -123,7 +123,7 @@ const rawDemoData = [
       },
       {
         "ID del Anillo": "4646",
-        "Color del Gallo": "Demonio",
+        "Color del Gallo": "Caramba",
         "Peso": 3.10,
         "ID de Marcaje": "12121",
         "tipo de gallo": "Liso",
@@ -737,7 +737,7 @@ const rawDemoData = [
     "Gallos": [
       {
         "ID del Anillo": "7007",
-        "Color del Gallo": "Lucifer",
+        "Color del Gallo": "Loco",
         "Peso": 3.10,
         "ID de Marcaje": "99002",
         "tipo de gallo": "pava",
@@ -747,7 +747,7 @@ const rawDemoData = [
       },
       {
         "ID del Anillo": "8008",
-        "Color del Gallo": "Belcebú",
+        "Color del Gallo": "Fuerte",
         "Peso": 3.06,
         "ID de Marcaje": "11225",
         "tipo de gallo": "pava",

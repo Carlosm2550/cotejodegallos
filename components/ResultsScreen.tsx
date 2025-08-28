@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Pelea, Torneo, Cuerda, CuerdaStats, Gallo, SortConfig, SortKey } from '../types';
-import { ChevronUpIcon, ChevronDownIcon } from './Icons';
+import { ChevronUpIcon, ChevronDownIcon, RepeatIcon } from './Icons';
 
 
 // --- Lbs.Oz Weight Conversion Utilities ---
@@ -25,13 +25,14 @@ interface ResultsScreenProps {
     torneo: Torneo;
     cuerdas: Cuerda[];
     onReset: () => void;
+    onRematch: () => void;
     onBack: () => void;
     tournamentPhase: 'individual' | 'finished';
     onStartIndividualFights: () => void;
     hasIndividualFights: boolean;
 }
 
-const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, onReset, onBack, tournamentPhase, onStartIndividualFights, hasIndividualFights }) => {
+const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, onReset, onRematch, onBack, tournamentPhase, onStartIndividualFights, hasIndividualFights }) => {
     
     const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'points', direction: 'desc' });
     const [expandedCuerdas, setExpandedCuerdas] = useState<string[]>([]);
@@ -270,16 +271,22 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
                 </div>
             </div>
 
-            <div className="flex justify-center items-center space-x-4 mt-8 print-hide">
+            <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8 print-hide">
                  <button onClick={onBack} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-8 rounded-lg text-lg">Atrás</button>
                  {tournamentPhase === 'individual' && hasIndividualFights ? (
                     <button onClick={onStartIndividualFights} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg">
                         Iniciar Peleas Individuales
                     </button>
                  ) : (
-                    <button onClick={onReset} className="bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-3 px-8 rounded-lg text-lg">
-                        Crear Nuevo Torneo
-                    </button>
+                    <>
+                        <button onClick={onRematch} className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg text-lg flex items-center space-x-2">
+                           <RepeatIcon className="w-5 h-5"/>
+                           <span>Revancha (Mismos Gallos)</span>
+                        </button>
+                        <button onClick={onReset} className="bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-3 px-8 rounded-lg text-lg">
+                            Nuevo Torneo (Borrar Todo)
+                        </button>
+                    </>
                  )}
             </div>
         </div>

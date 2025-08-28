@@ -390,6 +390,16 @@ const App: React.FC = () => {
         }
     }, []);
 
+    const handleRematch = useCallback(() => {
+        if (window.confirm('¿Quieres iniciar una revancha con los mismos gallos y cuerdas? Los resultados de este torneo se reiniciarán.')) {
+            setPeleas([]);
+            setMatchmakingResults(null);
+            setTournamentPhase('main');
+            setScreen(Screen.SETUP);
+            addNotification('Listo para la revancha. Verifica los datos y comienza el cotejo.', 'info');
+        }
+    }, [addNotification]);
+
     const handleFullReset = useCallback(() => {
         if(window.confirm('¿Estás seguro de que quieres reiniciar la aplicación? Se borrarán permanentemente todos los datos guardados (cuerdas, gallos y reglas).')) {
             localStorage.clear();
@@ -441,6 +451,7 @@ const App: React.FC = () => {
                     torneo={torneo} 
                     cuerdas={cuerdas} 
                     onReset={handleReset}
+                    onRematch={handleRematch}
                     onBack={handleBackToMatchmaking}
                     tournamentPhase={tournamentPhase}
                     onStartIndividualFights={handleStartIndividualFights}
