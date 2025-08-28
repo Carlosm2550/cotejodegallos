@@ -18,20 +18,20 @@ const formatWeightLbsOz = (totalOunces: number): string => {
 
 // --- SCREEN ---
 interface LiveFightScreenProps {
-  peleas: Pelea[];
+  peleas: Pelea[]; // This will be the list of UNFINISHED fights
   onFinishFight: (fightId: string, winner: 'A' | 'B' | 'DRAW', duration: number) => void;
   onFinishTournament: () => void;
   onBack: () => void;
+  totalFightsInPhase: number;
 }
 
-const LiveFightScreen: React.FC<LiveFightScreenProps> = ({ peleas, onFinishFight, onFinishTournament, onBack }) => {
+const LiveFightScreen: React.FC<LiveFightScreenProps> = ({ peleas, onFinishFight, onFinishTournament, onBack, totalFightsInPhase }) => {
   const [minutes, setMinutes] = useState('');
   const [seconds, setSeconds] = useState('');
   const minutesRef = useRef<HTMLInputElement>(null);
   const secondsRef = useRef<HTMLInputElement>(null);
   
-  const [currentFightIndex, setCurrentFightIndex] = useState(0);
-  const currentFight = peleas[currentFightIndex];
+  const currentFight = peleas[0];
   
   const [cuerdas, setCuerdas] = useState<Cuerda[]>([]);
   const [torneo, setTorneo] = useState<Torneo|null>(null);
@@ -45,10 +45,12 @@ const LiveFightScreen: React.FC<LiveFightScreenProps> = ({ peleas, onFinishFight
 
   useEffect(() => {
     // Reset timer for new fight and focus
-    setMinutes('');
-    setSeconds('');
-    minutesRef.current?.focus();
-  }, [currentFightIndex]);
+    if (currentFight) {
+      setMinutes('');
+      setSeconds('');
+      minutesRef.current?.focus();
+    }
+  }, [currentFight]);
 
   const handleMinutesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 2);
@@ -88,22 +90,18 @@ const LiveFightScreen: React.FC<LiveFightScreenProps> = ({ peleas, onFinishFight
     const secNum = parseInt(seconds, 10) || 0;
     const duration = (minNum * 60) + Math.min(secNum, 59); // Ensure seconds are not > 59
     onFinishFight(currentFight.id, winner, duration);
-    
-    // Move to next fight or finish
-    if (currentFightIndex < peleas.length - 1) {
-        setCurrentFightIndex(currentFightIndex + 1);
-    } else {
-        onFinishTournament();
-    }
   };
   
   if (!currentFight || !torneo) {
     return (
-        <div className="text-center">
+        <div className="text-center p-8">
              <h2 className="text-3xl font-bold text-white">Cargando siguiente pelea...</h2>
+             <p className="text-gray-400 mt-2">Si la carga se congela, no hay más peleas en esta fase.</p>
         </div>
     )
   }
+  
+  const finishedFightsCount = totalFightsInPhase - peleas.length;
 
   const formatRoosterDetails = (rooster: Gallo) => {
       return `${formatWeightLbsOz(rooster.weight)} Lb.Oz / ${rooster.ageMonths}m / ${rooster.tipoGallo}`
@@ -114,7 +112,7 @@ const LiveFightScreen: React.FC<LiveFightScreenProps> = ({ peleas, onFinishFight
       {/* Top Title Section */}
       <div className="text-center mb-8">
         <h2 className="text-5xl md:text-6xl font-extrabold tracking-tight text-amber-400">Pelea #{currentFight.fightNumber}</h2>
-        <p className="text-lg md:text-xl text-gray-400 mt-2">Pelea {currentFightIndex + 1} de {peleas.length} en esta fase</p>
+        <p className="text-lg md:text-xl text-gray-400 mt-2">Pelea {finishedFightsCount + 1} de {totalFightsInPhase} en esta fase</p>
       </div>
 
       {/* Main Fight Display */}

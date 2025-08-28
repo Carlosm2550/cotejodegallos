@@ -31,9 +31,11 @@ interface MatchmakingScreenProps {
     onBack: () => void;
     onCreateManualFight: (roosterAId: string, roosterBId: string) => void;
     onUpdateGallo: (galloData: Omit<Gallo, 'id' | 'tipoEdad'>, currentGalloId: string) => void;
+    isTournamentInProgress: boolean;
+    onResumeTournament: () => void;
 }
 
-const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, cuerdas, gallos, onStartTournament, onBack, onCreateManualFight, onUpdateGallo }) => {
+const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, cuerdas, gallos, onStartTournament, onBack, onCreateManualFight, onUpdateGallo, isTournamentInProgress, onResumeTournament }) => {
     
     const [selectedRoosters, setSelectedRoosters] = useState<string[]>([]);
     const [isEditModalOpen, setEditModalOpen] = useState(false);
@@ -111,7 +113,7 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
             </div>
             
             <div className="bg-gray-800/50 rounded-2xl shadow-lg border border-gray-700 p-4">
-                <h3 className="text-xl font-bold text-amber-400 mb-3">Estadísticas del Cotejo</h3>
+                <h3 className="text-xl font-bold text-amber-400 mb-3">Estadísticas de la Contienda</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-center">
                     <div className="bg-gray-700/50 p-3 rounded-lg">
                         <p className="text-2xl font-bold text-white">{totalFights}</p>
@@ -145,7 +147,7 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
 
             {totalRoostersForIndividualRound > 0 && (
                 <div className="bg-gray-800/50 rounded-2xl shadow-lg border border-gray-700 p-4 mt-8">
-                    <h3 className="text-xl font-bold text-amber-400 mb-4">Cotejo Manual de Sobrantes</h3>
+                    <h3 className="text-xl font-bold text-amber-400 mb-4">Contiendas Manuales</h3>
                     
                     {results.individualFights.length > 0 && (
                         <div className="space-y-2 mb-6 printable-card">
@@ -156,7 +158,7 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
 
                     {results.unpairedRoosters.length > 0 && (
                         <div>
-                             <h4 className="text-amber-400 mb-2 text-base">Gallos esperando cotejo:</h4>
+                             <h4 className="text-amber-400 mb-2 text-base">Gallos Esperando Contienda</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 {results.unpairedRoosters.map(gallo => {
                                     const isSelected = selectedRoosters.includes(gallo.id);
@@ -246,9 +248,15 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
                      <button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg mr-4">
                         Imprimir PDF
                     </button>
-                    <button onClick={onStartTournament} className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg text-lg">
-                        Comenzar Torneo
-                    </button>
+                    {isTournamentInProgress ? (
+                        <button onClick={onResumeTournament} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg">
+                            Volver a la Contienda
+                        </button>
+                    ) : (
+                        <button onClick={onStartTournament} className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg text-lg">
+                            Comenzar Torneo
+                        </button>
+                    )}
                 </div>
             </div>
             

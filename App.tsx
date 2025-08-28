@@ -351,11 +351,7 @@ const App: React.FC = () => {
         setTournamentPhase('main');
         setScreen(Screen.LIVE_FIGHT);
     }, [matchmakingResults]);
-
-    const handleFinishFight = useCallback((fightId: string, winner: 'A' | 'B' | 'DRAW', duration: number) => {
-        setPeleas(prev => prev.map(p => p.id === fightId ? { ...p, winner, duration } : p));
-    }, []);
-
+    
     const handleFinishTournament = useCallback(() => {
         if (tournamentPhase === 'main' && matchmakingResults?.individualFights && matchmakingResults.individualFights.length > 0) {
             setTournamentPhase('individual');
@@ -364,6 +360,20 @@ const App: React.FC = () => {
         }
         setScreen(Screen.RESULTS);
     }, [tournamentPhase, matchmakingResults]);
+
+    const handleFinishFight = useCallback((fightId: string, winner: 'A' | 'B' | 'DRAW', duration: number) => {
+        setPeleas(prev => {
+            const updatedPeleas = prev.map(p => p.id === fightId ? { ...p, winner, duration } : p);
+            
+            const unfinishedFights = updatedPeleas.filter(p => p.winner === null);
+
+            if (unfinishedFights.length === 0) {
+                 setTimeout(() => handleFinishTournament(), 100);
+            }
+            
+            return updatedPeleas;
+        });
+    }, [handleFinishTournament]);
 
     const handleStartIndividualFights = useCallback(() => {
         if (!matchmakingResults) return;
@@ -389,8 +399,10 @@ const App: React.FC = () => {
 
 
     const handleBackToMatchmaking = useCallback(() => setScreen(Screen.MATCHMAKING), []);
+    const handleResumeTournament = useCallback(() => setScreen(Screen.LIVE_FIGHT), []);
     
     const finishedFights = useMemo(() => peleas.filter(p => p.winner !== null), [peleas]);
+    const isTournamentInProgress = useMemo(() => peleas.length > 0 && peleas.some(p => p.winner === null), [peleas]);
     
     const renderScreen = () => {
         switch (screen) {
@@ -404,6 +416,8 @@ const App: React.FC = () => {
                     onBack={handleBackToSetup}
                     onCreateManualFight={handleCreateManualFight}
                     onUpdateGallo={handleSaveGallo}
+                    isTournamentInProgress={isTournamentInProgress}
+                    onResumeTournament={handleResumeTournament}
                 />;
             case Screen.LIVE_FIGHT:
                 return <LiveFightScreen 
@@ -411,6 +425,7 @@ const App: React.FC = () => {
                     onFinishFight={handleFinishFight} 
                     onFinishTournament={handleFinishTournament}
                     onBack={handleBackToMatchmaking}
+                    totalFightsInPhase={peleas.length}
                 />;
             case Screen.RESULTS:
                 // FIX: Add a type guard to ensure `tournamentPhase` is not 'main' when rendering `ResultsScreen`, as the component's props only allow 'individual' or 'finished' phases.
@@ -453,7 +468,7 @@ const App: React.FC = () => {
             <div className="container mx-auto p-4 sm:p-6 lg:p-8">
                 <header className="flex items-center space-x-4 mb-8">
                     <TrophyIcon className="w-10 h-10 text-amber-400" />
-                    <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-wider">GalleraPro <span className="text-amber-500 font-light">- Cotejador de Peleas</span></h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-wider">GalleraPro <span className="text-amber-500 font-light">- 100% Peleas de gallos</span></h1>
                 </header>
                 <main>
                     {renderScreen()}
