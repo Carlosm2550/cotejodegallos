@@ -403,6 +403,7 @@ const App: React.FC = () => {
     
     const finishedFights = useMemo(() => peleas.filter(p => p.winner !== null), [peleas]);
     const isTournamentInProgress = useMemo(() => peleas.length > 0 && peleas.some(p => p.winner === null), [peleas]);
+    const isTournamentFinished = useMemo(() => tournamentPhase === 'finished', [tournamentPhase]);
     
     const renderScreen = () => {
         switch (screen) {
@@ -417,7 +418,7 @@ const App: React.FC = () => {
                     onCreateManualFight={handleCreateManualFight}
                     onUpdateGallo={handleSaveGallo}
                     isTournamentInProgress={isTournamentInProgress}
-                    isTournamentFinished={tournamentPhase === 'finished'}
+                    isTournamentFinished={isTournamentFinished}
                     onGoToResults={() => setScreen(Screen.RESULTS)}
                     onResumeTournament={handleResumeTournament}
                 />;
@@ -460,6 +461,8 @@ const App: React.FC = () => {
                     onDeleteGallo={handleDeleteGallo}
                     isMatchmaking={isMatchmaking}
                     onFullReset={handleFullReset}
+                    isTournamentFinished={isTournamentFinished}
+                    onGoToResults={() => setScreen(Screen.RESULTS)}
                 />;
         }
     };

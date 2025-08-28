@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Cuerda, Gallo, Torneo } from '../types';
-import { SettingsIcon, RoosterIcon, UsersIcon, PlusIcon, TrashIcon, PencilIcon, PlayIcon, WarningIcon, RepeatIcon } from './Icons';
+import { SettingsIcon, RoosterIcon, UsersIcon, PlusIcon, TrashIcon, PencilIcon, PlayIcon, WarningIcon, RepeatIcon, TrophyIcon } from './Icons';
 import Modal from './Modal';
 import { CuerdaFormData } from '../App';
 import GalloFormModal, { LbsOzInput, InputField } from './GalloFormModal';
@@ -261,9 +261,11 @@ interface SetupScreenProps {
     onDeleteGallo: (galloId: string) => void;
     isMatchmaking: boolean;
     onFullReset: () => void;
+    isTournamentFinished: boolean;
+    onGoToResults: () => void;
 }
 
-const SetupScreen: React.FC<SetupScreenProps> = ({ cuerdas, gallos, torneo, onUpdateTorneo, onStartMatchmaking, onSaveCuerda, onDeleteCuerda, onSaveGallo, onAddBulkGallos, onDeleteGallo, isMatchmaking, onFullReset }) => {
+const SetupScreen: React.FC<SetupScreenProps> = ({ cuerdas, gallos, torneo, onUpdateTorneo, onStartMatchmaking, onSaveCuerda, onDeleteCuerda, onSaveGallo, onAddBulkGallos, onDeleteGallo, isMatchmaking, onFullReset, isTournamentFinished, onGoToResults }) => {
     const [isCuerdaModalOpen, setCuerdaModalOpen] = useState(false);
     const [isGalloModalOpen, setGalloModalOpen] = useState(false);
     
@@ -424,26 +426,36 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ cuerdas, gallos, torneo, onUp
                         </SectionCard>
                     </div>
                      <div className="pt-6 text-center">
-                        <button 
-                            onClick={onStartMatchmaking} 
-                            disabled={isMatchmaking || activeRoosterCount < 2}
-                            className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-10 rounded-lg text-lg transition-all transform hover:scale-105 shadow-lg disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center mx-auto"
-                        >
-                           {isMatchmaking ? (
-                                <>
-                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Cotejando...
-                                </>
-                           ) : (
-                               <>
-                                <PlayIcon className="w-6 h-6 mr-2"/> Iniciar Contienda
-                               </>
-                           )}
-                        </button>
-                        {activeRoosterCount < 2 && <p className="text-xs text-gray-500 mt-2">Se necesitan al menos 2 gallos para empezar.</p>}
+                        {isTournamentFinished ? (
+                            <button
+                                onClick={onGoToResults}
+                                className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-4 px-10 rounded-lg text-lg transition-all transform hover:scale-105 shadow-lg flex items-center justify-center mx-auto"
+                            >
+                                <TrophyIcon className="w-6 h-6 mr-2"/>
+                                Clasificación General
+                            </button>
+                        ) : (
+                            <button 
+                                onClick={onStartMatchmaking} 
+                                disabled={isMatchmaking || activeRoosterCount < 2}
+                                className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-10 rounded-lg text-lg transition-all transform hover:scale-105 shadow-lg disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center mx-auto"
+                            >
+                               {isMatchmaking ? (
+                                    <>
+                                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Cotejando...
+                                    </>
+                               ) : (
+                                   <>
+                                    <PlayIcon className="w-6 h-6 mr-2"/> Iniciar Contienda
+                                   </>
+                               )}
+                            </button>
+                        )}
+                        {!isTournamentFinished && activeRoosterCount < 2 && <p className="text-xs text-gray-500 mt-2">Se necesitan al menos 2 gallos para empezar.</p>}
                     </div>
                 </div>
             </div>
