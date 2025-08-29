@@ -216,7 +216,7 @@ const App: React.FC = () => {
             for (let i = 1; i < frontCount; i++) {
                 newCuerdas.push({
                     id: `cuerda-${Date.now()}-${i}`,
-                    name: `${name} (F${i + 2})`,
+                    name: `${name} (F${i + 1})`,
                     owner,
                     baseCuerdaId: baseId
                 });

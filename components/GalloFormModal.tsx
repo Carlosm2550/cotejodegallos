@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Cuerda, Gallo, Torneo, TipoGallo, TipoEdad } from '../types';
-import { TrashIcon, ChevronDownIcon, ChevronUpIcon } from './Icons';
+import { TrashIcon, ChevronDownIcon, ChevronUpIcon, PencilIcon } from './Icons';
 import Modal from './Modal';
 import { AGE_OPTIONS_BY_MARCA } from '../constants';
 
@@ -161,6 +161,7 @@ const GalloFormModal: React.FC<{
     const [selectedCuerdaId, setSelectedCuerdaId] = useState('');
     const [activeTabCuerdaId, setActiveTabCuerdaId] = useState('');
     const [stagedGallos, setStagedGallos] = useState<Record<string, Omit<Gallo, 'id' | 'tipoEdad'>[]>>({});
+    const [editingStagedIndex, setEditingStagedIndex] = useState<number | null>(null);
 
     const initialGalloFormState: GalloBulkFormData = {
         ringId: '', color: '', cuerdaId: '', weight: 0, ageMonths: '', markingId: '', breederPlateId: '', tipoGallo: TipoGallo.LISO, marca: '',
@@ -193,14 +194,13 @@ const GalloFormModal: React.FC<{
     useEffect(() => {
         if (isOpen) {
             if (gallo) { // Single Edit Mode
-                setSingleForm({
-                    ...gallo
-                });
+                setSingleForm({ ...gallo });
             } else { // Bulk Add Mode Reset
                 setSelectedCuerdaId('');
                 setActiveTabCuerdaId('');
                 setStagedGallos({});
                 setCurrentGalloForm(initialGalloFormState);
+                setEditingStagedIndex(null);
             }
         }
     }, [isOpen, gallo]);
@@ -218,12 +218,7 @@ const GalloFormModal: React.FC<{
             return;
         }
 
-        const finalData = {
-            ...singleForm,
-            marca: Number(singleForm.marca),
-            breederPlateId: singleForm.breederPlateId?.trim() || 'N/A'
-        };
-
+        const finalData = { ...singleForm, marca: Number(singleForm.marca), breederPlateId: singleForm.breederPlateId?.trim() || 'N/A' };
         onSaveSingle(finalData, gallo.id);
         onClose();
     };
@@ -233,11 +228,13 @@ const GalloFormModal: React.FC<{
         setActiveTabCuerdaId(baseCuerdaId);
         setStagedGallos({});
         setCurrentGalloForm({ ...initialGalloFormState, cuerdaId: baseCuerdaId });
+        setEditingStagedIndex(null);
     };
 
     const handleTabClick = (cuerdaId: string) => {
         setActiveTabCuerdaId(cuerdaId);
         setCurrentGalloForm({ ...initialGalloFormState, cuerdaId });
+        setEditingStagedIndex(null);
     };
 
     const handleBulkFormChange = (field: keyof GalloBulkFormData, value: string | number) => {
@@ -254,16 +251,19 @@ const GalloFormModal: React.FC<{
         setCurrentGalloForm(newFormState);
     };
     
-    const handleAddStagedGallo = () => {
-        const existingCount = gallosByCuerda.get(activeTabCuerdaId)?.length || 0;
-        const stagedCount = (stagedGallos[activeTabCuerdaId] || []).length;
-        const totalCount = existingCount + stagedCount;
-        const limit = torneo.roostersPerTeam;
+    const handleSaveOrAddStagedGallo = () => {
+        const isEditing = editingStagedIndex !== null;
+        if (!isEditing) {
+            const existingCount = gallosByCuerda.get(activeTabCuerdaId)?.length || 0;
+            const stagedCount = (stagedGallos[activeTabCuerdaId] || []).length;
+            const totalCount = existingCount + stagedCount;
+            const limit = torneo.roostersPerTeam;
 
-        if (limit > 0 && totalCount >= limit) {
-            const cuerdaName = cuerdas.find(c => c.id === activeTabCuerdaId)?.name || 'Este frente';
-            alert(`${cuerdaName} ha alcanzado el límite de ${limit} gallos.`);
-            return;
+            if (limit > 0 && totalCount >= limit) {
+                const cuerdaName = cuerdas.find(c => c.id === activeTabCuerdaId)?.name || 'Este frente';
+                alert(`${cuerdaName} ha alcanzado el límite de ${limit} gallos.`);
+                return;
+            }
         }
         
         if (!currentGalloForm.marca || !currentGalloForm.ageMonths) {
@@ -276,21 +276,32 @@ const GalloFormModal: React.FC<{
         }
 
         const newGalloData: Omit<Gallo, 'id' | 'tipoEdad'> = {
-            ringId: currentGalloForm.ringId,
-            color: currentGalloForm.color,
-            cuerdaId: activeTabCuerdaId,
-            weight: currentGalloForm.weight,
-            markingId: currentGalloForm.markingId,
-            breederPlateId: currentGalloForm.breederPlateId?.trim() || 'N/A',
-            tipoGallo: currentGalloForm.tipoGallo,
-            ageMonths: Number(currentGalloForm.ageMonths),
-            marca: Number(currentGalloForm.marca),
+            ringId: currentGalloForm.ringId, color: currentGalloForm.color, cuerdaId: activeTabCuerdaId, weight: currentGalloForm.weight,
+            markingId: currentGalloForm.markingId, breederPlateId: currentGalloForm.breederPlateId?.trim() || 'N/A', tipoGallo: currentGalloForm.tipoGallo,
+            ageMonths: Number(currentGalloForm.ageMonths), marca: Number(currentGalloForm.marca),
         };
 
-        setStagedGallos(prev => ({
-            ...prev,
-            [activeTabCuerdaId]: [...(prev[activeTabCuerdaId] || []), newGalloData]
-        }));
+        if (isEditing) {
+            const updatedStaged = [...(stagedGallos[activeTabCuerdaId] || [])];
+            updatedStaged[editingStagedIndex] = newGalloData;
+            setStagedGallos(prev => ({ ...prev, [activeTabCuerdaId]: updatedStaged }));
+        } else {
+            setStagedGallos(prev => ({ ...prev, [activeTabCuerdaId]: [...(prev[activeTabCuerdaId] || []), newGalloData] }));
+        }
+        setEditingStagedIndex(null);
+        setCurrentGalloForm({ ...initialGalloFormState, cuerdaId: activeTabCuerdaId });
+    };
+
+    const handleEditStagedClick = (index: number) => {
+        const roosterToEdit = stagedGallos[activeTabCuerdaId][index];
+        setCurrentGalloForm({
+            ...roosterToEdit, ageMonths: String(roosterToEdit.ageMonths), marca: String(roosterToEdit.marca),
+        });
+        setEditingStagedIndex(index);
+    };
+
+    const handleCancelEdit = () => {
+        setEditingStagedIndex(null);
         setCurrentGalloForm({ ...initialGalloFormState, cuerdaId: activeTabCuerdaId });
     };
 
@@ -311,9 +322,7 @@ const GalloFormModal: React.FC<{
         const groups = new Map<string, Cuerda[]>();
         cuerdas.forEach(c => {
             const baseName = c.name.replace(/\s\(F\d+\)$/, '').trim();
-            if (!groups.has(baseName)) {
-                groups.set(baseName, []);
-            }
+            if (!groups.has(baseName)) { groups.set(baseName, []); }
             groups.get(baseName)!.push(c);
         });
         
@@ -338,28 +347,15 @@ const GalloFormModal: React.FC<{
     const renderSingleEditForm = () => {
         return (
             <form onSubmit={handleSingleSubmit} onKeyDown={handleFormKeyDown} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <h4 className="text-lg font-semibold text-amber-300 mb-2">Cuerda: {cuerdas.find(c => c.id === singleForm.cuerdaId)?.name || ''}</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <InputField label="ID del Anillo (A)" value={singleForm.ringId || ''} onChange={e => setSingleForm(p => ({...p, ringId: e.target.value}))} required />
                     <InputField label="Número de Placa Marcaje (Pm)" value={singleForm.markingId || ''} onChange={e => setSingleForm(p => ({...p, markingId: e.target.value}))} required />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <InputField label="Placa del Criadero (Pc)" value={singleForm.breederPlateId === 'N/A' ? '' : singleForm.breederPlateId || ''} onChange={e => setSingleForm(p => ({...p, breederPlateId: e.target.value}))} placeholder="N/A si se deja vacío" />
-                    <InputField 
-                        label="Cuerda" 
-                        value={cuerdas.find(c => c.id === singleForm.cuerdaId)?.name || ''} 
-                        disabled 
-                    />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <LbsOzInput 
-                        label="Peso (Lb.Oz)" 
-                        value={singleForm.weight || 0} 
-                        onChange={v => setSingleForm(p => ({...p, weight: v}))}
-                        validator={isWeightInTournamentRange}
-                    />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <InputField label="Color del Gallo" value={singleForm.color || ''} onChange={e => setSingleForm(p => ({...p, color: e.target.value}))} required />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <LbsOzInput label="Peso (Lb.Oz)" value={singleForm.weight || 0} onChange={v => setSingleForm(p => ({...p, weight: v}))} validator={isWeightInTournamentRange} />
                     <div>
                         <label className="block text-sm font-medium text-gray-400 mb-1">Marca</label>
                         <select value={singleForm.marca || ''} onChange={e => {
@@ -371,6 +367,8 @@ const GalloFormModal: React.FC<{
                             {Object.keys(AGE_OPTIONS_BY_MARCA).sort((a,b) => Number(a) - Number(b)).map(m => <option key={m} value={m}>Marca {m}</option>)}
                         </select>
                     </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                          <label className="block text-sm font-medium text-gray-400 mb-1">Edad</label>
                          <select value={singleForm.ageMonths || ''} onChange={e => setSingleForm(p => ({...p, ageMonths: Number(e.target.value)}))} required disabled={!singleForm.marca || ageOptions.length <= 1} className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition disabled:bg-gray-600">
@@ -378,8 +376,6 @@ const GalloFormModal: React.FC<{
                              {ageOptions.map(opt => <option key={opt.ageMonths} value={opt.ageMonths}>{opt.displayText}</option>)}
                          </select>
                     </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <InputField label="Tipo (Pollo/Gallo)" value={singleEditTipoEdad} disabled />
                     <div>
                         <label className="block text-sm font-medium text-gray-400 mb-1">Fenotipo</label>
@@ -425,16 +421,22 @@ const GalloFormModal: React.FC<{
                         })}
                     </div>
                     
-                    <div className="mb-4 space-y-2 max-h-40 overflow-y-auto pr-2">
-                        {(stagedGallos[activeTabCuerdaId] || []).map((g, index) => (
-                            <div key={index} className="flex items-center justify-between bg-gray-700/50 p-2 rounded-lg text-sm">
-                                <div><span className="font-bold">{g.color}</span> ({g.ringId})</div>
-                                <div className="flex items-center space-x-2">
-                                    <span>{formatWeightLbsOz(g.weight, true)} / {g.ageMonths}m</span>
-                                    <button onClick={() => handleDeleteStagedGallo(index)} className="p-1 text-gray-400 hover:text-red-500"><TrashIcon className="w-4 h-4"/></button>
+                    <div className="mb-4 space-y-2 max-h-20 overflow-y-auto pr-2">
+                        {(stagedGallos[activeTabCuerdaId] || []).map((g, index) => {
+                             const tipoEdad = g.ageMonths < 12 ? TipoEdad.POLLO : TipoEdad.GALLO;
+                             const fullDescription = `${g.color}: A:${g.ringId} / Pm:${g.markingId} / Pc:${g.breederPlateId} / Marca:${g.marca} / ${tipoEdad} / ${g.tipoGallo}`;
+                             return (
+                                <div key={index} className="flex items-center justify-between bg-gray-700/50 p-2 rounded-lg text-sm">
+                                    <p className="text-white truncate flex-grow text-xs" title={fullDescription}>
+                                        <span className="font-bold text-amber-400">{g.color}</span>: A:{g.ringId} / Pm:{g.markingId} / Pc:{g.breederPlateId} / Marca:{g.marca} / {tipoEdad} / {g.tipoGallo}
+                                    </p>
+                                    <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
+                                        <button onClick={() => handleEditStagedClick(index)} className="p-1 text-gray-400 hover:text-amber-400"><PencilIcon className="w-4 h-4"/></button>
+                                        <button onClick={() => handleDeleteStagedGallo(index)} className="p-1 text-gray-400 hover:text-red-500"><TrashIcon className="w-4 h-4"/></button>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            )
+                        })}
                          {(stagedGallos[activeTabCuerdaId]?.length || 0) === 0 && <p className="text-gray-500 text-center text-sm py-2">Aún no hay gallos para este frente.</p>}
                     </div>
 
@@ -442,55 +444,53 @@ const GalloFormModal: React.FC<{
                         const existingCount = gallosByCuerda.get(activeTabCuerdaId)?.length || 0;
                         const stagedCount = (stagedGallos[activeTabCuerdaId] || []).length;
                         const isLimitReached = torneo.roostersPerTeam > 0 && (existingCount + stagedCount) >= torneo.roostersPerTeam;
+                        const isEditing = editingStagedIndex !== null;
                         
                         return (
                             <div className="p-4 bg-gray-900/50 rounded-lg space-y-4">
-                                <h4 className="font-bold text-amber-400">Añadir Gallo al Frente</h4>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <InputField label="ID del Anillo (A)" value={currentGalloForm.ringId} onChange={e => handleBulkFormChange('ringId', e.target.value)} required disabled={isLimitReached}/>
-                                    <InputField label="Número de Placa Marcaje (Pm)" value={currentGalloForm.markingId} onChange={e => handleBulkFormChange('markingId', e.target.value)} required disabled={isLimitReached}/>
+                                <h4 className="font-bold text-amber-400">{isEditing ? `Editando Gallo: ${currentGalloForm.color}` : 'Añadir Gallo al Frente'}</h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <InputField label="ID del Anillo (A)" value={currentGalloForm.ringId} onChange={e => handleBulkFormChange('ringId', e.target.value)} required disabled={isLimitReached && !isEditing}/>
+                                    <InputField label="Número de Placa Marcaje (Pm)" value={currentGalloForm.markingId} onChange={e => handleBulkFormChange('markingId', e.target.value)} required disabled={isLimitReached && !isEditing}/>
+                                    <InputField label="Placa del Criadero (Pc)" value={currentGalloForm.breederPlateId} onChange={e => handleBulkFormChange('breederPlateId', e.target.value)} placeholder="N/A si se deja vacío" disabled={isLimitReached && !isEditing}/>
                                 </div>
-                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <InputField label="Placa del Criadero (Pc)" value={currentGalloForm.breederPlateId} onChange={e => handleBulkFormChange('breederPlateId', e.target.value)} placeholder="N/A si se deja vacío" disabled={isLimitReached}/>
-                                    <InputField label="Color del Gallo" value={currentGalloForm.color} onChange={e => handleBulkFormChange('color', e.target.value)} required disabled={isLimitReached}/>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <LbsOzInput 
-                                        label="Peso (Lb.Oz)" 
-                                        value={currentGalloForm.weight} 
-                                        onChange={v => handleBulkFormChange('weight', v)} 
-                                        disabled={isLimitReached}
-                                        validator={isWeightInTournamentRange}
-                                    />
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <InputField label="Color del Gallo" value={currentGalloForm.color} onChange={e => handleBulkFormChange('color', e.target.value)} required disabled={isLimitReached && !isEditing}/>
+                                    <LbsOzInput label="Peso (Lb.Oz)" value={currentGalloForm.weight} onChange={v => handleBulkFormChange('weight', v)} disabled={isLimitReached && !isEditing} validator={isWeightInTournamentRange} />
                                     <div>
                                         <label className="block text-sm font-medium text-gray-400 mb-1">Marca</label>
-                                        <select value={currentGalloForm.marca} onChange={e => handleBulkFormChange('marca', e.target.value)} required className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition" disabled={isLimitReached}>
+                                        <select value={currentGalloForm.marca} onChange={e => handleBulkFormChange('marca', e.target.value)} required className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition" disabled={isLimitReached && !isEditing}>
                                             <option value="" disabled>Seleccionar...</option>
                                             {Object.keys(AGE_OPTIONS_BY_MARCA).sort((a,b) => Number(a) - Number(b)).map(m => <option key={m} value={m}>Marca {m}</option>)}
                                         </select>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-400 mb-1">Edad</label>
-                                        <select value={currentGalloForm.ageMonths} onChange={e => handleBulkFormChange('ageMonths', e.target.value)} required disabled={isLimitReached || !currentGalloForm.marca || ageOptionsForBulk.length <= 1} className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition disabled:bg-gray-600">
+                                        <select value={currentGalloForm.ageMonths} onChange={e => handleBulkFormChange('ageMonths', e.target.value)} required disabled={isLimitReached && !isEditing || !currentGalloForm.marca || ageOptionsForBulk.length <= 1} className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition disabled:bg-gray-600">
                                             <option value="" disabled>Seleccionar...</option>
                                             {ageOptionsForBulk.map(opt => <option key={opt.ageMonths} value={opt.ageMonths}>{opt.displayText}</option>)}
                                         </select>
                                     </div>
                                     <InputField label="Tipo (Pollo/Gallo)" value={bulkAddTipoEdad} disabled />
-                                </div>
-                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-400 mb-1">Fenotipo</label>
-                                        <select value={currentGalloForm.tipoGallo} onChange={e => handleBulkFormChange('tipoGallo', e.target.value as TipoGallo)} required className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition" disabled={isLimitReached}>
+                                        <select value={currentGalloForm.tipoGallo} onChange={e => handleBulkFormChange('tipoGallo', e.target.value as TipoGallo)} required className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition" disabled={isLimitReached && !isEditing}>
                                             {Object.values(TipoGallo).map(t => <option key={t} value={t}>{t}</option>)}
                                         </select>
                                     </div>
                                 </div>
-                                <button type="button" onClick={handleAddStagedGallo} disabled={isLimitReached || !currentGalloForm.ringId || !currentGalloForm.color || currentGalloForm.weight === 0} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed">
-                                    {isLimitReached ? 'Límite de gallos alcanzado' : 'Añadir Gallo a este Frente'}
-                                </button>
+                                <div className="flex items-center justify-end space-x-2">
+                                    {isEditing && (
+                                        <button type="button" onClick={handleCancelEdit} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">
+                                            Cancelar
+                                        </button>
+                                    )}
+                                    <button type="button" onClick={handleSaveOrAddStagedGallo} disabled={(isLimitReached && !isEditing) || !currentGalloForm.ringId || !currentGalloForm.color || currentGalloForm.weight === 0} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed">
+                                        {isLimitReached && !isEditing ? 'Límite de gallos alcanzado' : isEditing ? 'Guardar Cambios' : 'Añadir Gallo a este Frente'}
+                                    </button>
+                                </div>
                             </div>
                         );
                     })()}
