@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Pelea, Torneo, Cuerda, CuerdaStats, Gallo, SortConfig, SortKey } from '../types';
-import { ChevronUpIcon, ChevronDownIcon, RepeatIcon } from './Icons';
+import { Pelea, Torneo, Cuerda, CuerdaStats, Gallo } from '../types';
+import { RepeatIcon } from './Icons';
 
 
 // --- Lbs.Oz Weight Conversion Utilities ---
@@ -31,7 +31,6 @@ interface ResultsScreenProps {
 
 const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, onReset, onRematch, onBack }) => {
     
-    const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'points', direction: 'desc' });
     const [expandedCuerdas, setExpandedCuerdas] = useState<string[]>([]);
 
     const toggleCuerdaExpansion = (cuerdaId: string) => {
@@ -74,6 +73,8 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
             } else if (pelea.winner === 'DRAW') {
                 statsMap[idA].draws++;
                 statsMap[idB].draws++;
+                statsMap[idA].totalDurationSeconds += duration;
+                statsMap[idB].totalDurationSeconds += duration;
             }
         });
         
@@ -95,67 +96,22 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
     }, [peleas, cuerdas, torneo]);
 
     const sortedStats = useMemo(() => {
-        const { key, direction } = sortConfig;
         const sortableItems = [...stats];
-
         sortableItems.sort((a, b) => {
-            // Main comparison logic based on the clicked header
-            let comparison = 0;
-            switch (key) {
-                case 'name':
-                    comparison = a.cuerdaName.localeCompare(b.cuerdaName);
-                    break;
-                case 'wins':
-                    comparison = a.wins - b.wins;
-                    break;
-                case 'time':
-                    comparison = a.totalDurationSeconds - b.totalDurationSeconds;
-                    break;
-                case 'points':
-                default:
-                    comparison = a.points - b.points;
-                    break;
+            // Regla 1: Más victorias es mejor (orden descendente).
+            if (a.wins !== b.wins) {
+                return b.wins - a.wins;
             }
 
-            // Apply direction for the primary sort key
-            if (comparison !== 0) {
-                return direction === 'asc' ? comparison : -comparison;
-            }
-
-            // If the primary sort is a tie, apply the fixed tie-breaking rules.
-            // Rule 1: More points is better.
-            if (a.points !== b.points) {
-                return b.points - a.points;
-            }
-
-            // Rule 2: Less time is better.
+            // Regla 2: Menos tiempo es mejor (orden ascendente).
             if (a.totalDurationSeconds !== b.totalDurationSeconds) {
                 return a.totalDurationSeconds - b.totalDurationSeconds;
             }
             
-            return 0; // Truly equal
+            return 0; // Son iguales
         });
-
         return sortableItems;
-    }, [stats, sortConfig]);
-
-    const requestSort = (key: SortKey) => {
-        let direction: 'asc' | 'desc' = 'desc';
-        if (sortConfig.key === key && sortConfig.direction === 'desc') {
-            direction = 'asc';
-        }
-        if (key === 'name' || key === 'time') {
-            if (sortConfig.key !== key || sortConfig.direction === 'desc') direction = 'asc';
-            else direction = 'desc';
-        }
-        setSortConfig({ key, direction });
-    };
-
-    const getSortIcon = (key: SortKey) => {
-        if (sortConfig.key !== key) return null;
-        if (sortConfig.direction === 'asc') return <ChevronUpIcon className="w-4 h-4 inline-block ml-1" />;
-        return <ChevronDownIcon className="w-4 h-4 inline-block ml-1" />;
-    };
+    }, [stats]);
 
     const formatTime = (totalSeconds: number) => {
         const minutes = Math.floor(totalSeconds / 60);
@@ -210,19 +166,16 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
                         <thead className="text-xs text-amber-400 uppercase bg-gray-700/50">
                             <tr>
                                 <th scope="col" className="px-4 py-3 text-center">#</th>
-                                <th scope="col" className="px-6 py-3 cursor-pointer" onClick={() => requestSort('name')}>
-                                    CUERDA {getSortIcon('name')}
+                                <th scope="col" className="px-6 py-3">
+                                    CUERDA
                                 </th>
-                                <th scope="col" className="px-3 py-3 text-center cursor-pointer" onClick={() => requestSort('points')}>
-                                    PUNTOS {getSortIcon('points')}
-                                </th>
-                                <th scope="col" className="px-3 py-3 text-center cursor-pointer" onClick={() => requestSort('wins')}>
-                                    PG {getSortIcon('wins')}
+                                <th scope="col" className="px-3 py-3 text-center">
+                                    PG
                                 </th>
                                 <th scope="col" className="px-3 py-3 text-center">PE</th>
                                 <th scope="col" className="px-3 py-3 text-center">PP</th>
-                                <th scope="col" className="px-4 py-3 text-center cursor-pointer" colSpan={2} onClick={() => requestSort('time')}>
-                                    TIEMPO {getSortIcon('time')}
+                                <th scope="col" className="px-4 py-3 text-center">
+                                    TIEMPO
                                 </th>
                             </tr>
                         </thead>
@@ -237,15 +190,15 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
                                    <tr className="border-b border-gray-700 hover:bg-gray-700/30 cursor-pointer" onClick={() => toggleCuerdaExpansion(stat.cuerdaId)}>
                                        <td className="px-4 py-3 font-bold text-center">{index + 1}</td>
                                        <td className="px-6 py-3 font-semibold text-white">{stat.cuerdaName}</td>
-                                       <td className="px-3 py-3 text-center font-bold text-white">{stat.points}</td>
                                        <td className="px-3 py-3 text-center text-green-400 font-bold">{stat.wins}</td>
                                        <td className="px-3 py-3 text-center text-yellow-400">{stat.draws}</td>
                                        <td className="px-3 py-3 text-center text-red-400">{stat.losses}</td>
-                                       <td className="px-2 py-3 text-right font-mono">{String(minutes).padStart(2, '0')}</td>
-                                       <td className="px-2 py-3 text-left font-mono">: {String(seconds).padStart(2, '0')}</td>
+                                       <td className="px-4 py-3 text-center text-white font-semibold tracking-wider">
+                                            {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+                                       </td>
                                    </tr>
                                    <tr className={`results-details-row ${isExpanded ? '' : 'hidden print:table-row'}`}>
-                                      <td colSpan={8} className="p-4 results-details-cell bg-gray-700/10">
+                                      <td colSpan={6} className="p-4 results-details-cell bg-gray-700/10">
                                         <div className="space-y-2">
                                             <h4 className="font-bold text-amber-300">Detalles de Peleas para {stat.cuerdaName}:</h4>
                                             {teamFights.length > 0 ? teamFights.map(fight => {
@@ -299,7 +252,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
                                         <td className="px-4 py-3 font-bold text-center">{index + 1}</td>
                                         <td className="px-6 py-3 font-semibold text-white">{winner.rooster.color}</td>
                                         <td className="px-6 py-3">{getCuerdaName(winner.rooster.cuerdaId)}</td>
-                                        <td className="px-4 py-3 text-center font-mono">{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}</td>
+                                        <td className="px-4 py-3 text-center text-white font-semibold tracking-wider">{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}</td>
                                     </tr>
                                 )
                             })}

@@ -73,12 +73,6 @@ export type CuerdaStats = {
   points: number;
 };
 
-export type SortKey = 'name' | 'wins' | 'time' | 'points';
-export type SortConfig = {
-    key: SortKey | null;
-    direction: 'asc' | 'desc';
-};
-
 export interface Notification {
   id: number;
   message: string;

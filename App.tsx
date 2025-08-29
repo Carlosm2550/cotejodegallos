@@ -147,7 +147,6 @@ const App: React.FC = () => {
                 const { cuerdas: demoCuerdas, gallos: demoGallos } = processDemoData();
                 setCuerdas(demoCuerdas);
                 setGallos(demoGallos);
-                addNotification('Datos de demostración cargados.', 'info');
             }
         } catch (error) {
             console.error("Failed to load data from localStorage", error);
@@ -423,6 +422,7 @@ const App: React.FC = () => {
                     onFinishTournament={handleFinishTournament}
                     onBack={handleBackToMatchmaking}
                     totalFightsInPhase={peleas.length}
+                    addNotification={addNotification}
                 />;
             case Screen.RESULTS:
                  return <ResultsScreen 

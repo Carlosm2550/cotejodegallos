@@ -23,9 +23,10 @@ interface LiveFightScreenProps {
   onFinishTournament: () => void;
   onBack: () => void;
   totalFightsInPhase: number;
+  addNotification: (message: string, type?: 'success' | 'error' | 'info') => void;
 }
 
-const LiveFightScreen: React.FC<LiveFightScreenProps> = ({ peleas, onFinishFight, onFinishTournament, onBack, totalFightsInPhase }) => {
+const LiveFightScreen: React.FC<LiveFightScreenProps> = ({ peleas, onFinishFight, onFinishTournament, onBack, totalFightsInPhase, addNotification }) => {
   const [minutes, setMinutes] = useState('');
   const [seconds, setSeconds] = useState('');
   const minutesRef = useRef<HTMLInputElement>(null);
@@ -86,10 +87,20 @@ const LiveFightScreen: React.FC<LiveFightScreenProps> = ({ peleas, onFinishFight
   const handleFinishFight = (winner: 'A' | 'B' | 'DRAW') => {
     if (!currentFight) return;
     
-    const minNum = parseInt(minutes, 10) || 0;
-    const secNum = parseInt(seconds, 10) || 0;
-    const duration = (minNum * 60) + Math.min(secNum, 59); // Ensure seconds are not > 59
-    onFinishFight(currentFight.id, winner, duration);
+    if (winner === 'DRAW') {
+        const duration = 8 * 60; // 8 minutes in seconds
+        onFinishFight(currentFight.id, winner, duration);
+    } else {
+        const minNum = parseInt(minutes, 10) || 0;
+        const secNum = parseInt(seconds, 10) || 0;
+        const duration = (minNum * 60) + Math.min(secNum, 59);
+        
+        if (duration === 0) {
+            addNotification('Debes introducir un tiempo de pelea para declarar un ganador.', 'error');
+            return;
+        }
+        onFinishFight(currentFight.id, winner, duration);
+    }
   };
   
   if (!currentFight || !torneo) {
