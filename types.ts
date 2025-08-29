@@ -1,4 +1,5 @@
 
+
 export enum Screen {
   SETUP,
   MATCHMAKING,
@@ -32,6 +33,7 @@ export interface Gallo {
   weight: number; // Stored as total ounces
   ageMonths: number;
   markingId: string;
+  breederPlateId: string; // Placa del Criadero (Pc)
   tipoGallo: TipoGallo;
   tipoEdad: TipoEdad;
   marca: number;

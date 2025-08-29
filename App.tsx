@@ -119,7 +119,6 @@ const App: React.FC = () => {
     const [peleas, setPeleas] = useState<Pelea[]>([]);
     const [matchmakingResults, setMatchmakingResults] = useState<MatchmakingResults | null>(null);
     const [isMatchmaking, setIsMatchmaking] = useState(false);
-    const [tournamentPhase, setTournamentPhase] = useState<'main' | 'individual' | 'finished'>('main');
     const [notifications, setNotifications] = useState<Notification[]>([]);
     
     const addNotification = useCallback((message: string, type: Notification['type'] = 'info', duration = 3000) => {
@@ -297,7 +296,7 @@ const App: React.FC = () => {
             
             const results: MatchmakingResults = {
                 mainFights,
-                individualFights: [],
+                individualFights: [], // Individual fights are now added to mainFights directly
                 unpairedRoosters: leftovers,
                 stats: {
                     contribution: 0,
@@ -325,7 +324,7 @@ const App: React.FC = () => {
 
         const newFight: Pelea = {
             id: `pelea-manual-${roosterAId}-${roosterBId}`,
-            fightNumber: matchmakingResults.mainFights.length + matchmakingResults.individualFights.length + 1,
+            fightNumber: matchmakingResults.mainFights.length + 1,
             roosterA,
             roosterB,
             winner: null,
@@ -336,11 +335,11 @@ const App: React.FC = () => {
             if (!prev) return null;
             return {
                 ...prev,
-                individualFights: [...prev.individualFights, newFight],
+                mainFights: [...prev.mainFights, newFight],
                 unpairedRoosters: prev.unpairedRoosters.filter(g => g.id !== roosterAId && g.id !== roosterBId),
             };
         });
-        addNotification('Pelea manual creada.', 'success');
+        addNotification('Pelea manual creada y añadida a la cartelera.', 'success');
     }, [matchmakingResults, gallos, addNotification]);
 
     const handleBackToSetup = useCallback(() => setScreen(Screen.SETUP), []);
@@ -348,18 +347,12 @@ const App: React.FC = () => {
     const handleStartTournament = useCallback(() => {
         if (!matchmakingResults) return;
         setPeleas(matchmakingResults.mainFights);
-        setTournamentPhase('main');
         setScreen(Screen.LIVE_FIGHT);
     }, [matchmakingResults]);
     
     const handleFinishTournament = useCallback(() => {
-        if (tournamentPhase === 'main' && matchmakingResults?.individualFights && matchmakingResults.individualFights.length > 0) {
-            setTournamentPhase('individual');
-        } else {
-            setTournamentPhase('finished');
-        }
         setScreen(Screen.RESULTS);
-    }, [tournamentPhase, matchmakingResults]);
+    }, []);
 
     const handleFinishFight = useCallback((fightId: string, winner: 'A' | 'B' | 'DRAW', duration: number) => {
         setPeleas(prev => {
@@ -375,14 +368,6 @@ const App: React.FC = () => {
         });
     }, [handleFinishTournament]);
 
-    const handleStartIndividualFights = useCallback(() => {
-        if (!matchmakingResults) return;
-        // Merge finished main fights with new individual fights for the state
-        const finishedMainFights = peleas.filter(p => p.winner !== null);
-        setPeleas([...finishedMainFights, ...matchmakingResults.individualFights]);
-        setScreen(Screen.LIVE_FIGHT);
-    }, [matchmakingResults, peleas]);
-
     const handleReset = useCallback(() => {
         if(window.confirm('¿Estás seguro de que quieres empezar un nuevo torneo? Se borrarán todos los datos actuales.')) {
             localStorage.clear();
@@ -391,12 +376,11 @@ const App: React.FC = () => {
     }, []);
 
     const handleRematch = useCallback(() => {
-        if (window.confirm('¿Quieres iniciar una revancha con los mismos gallos y cuerdas? Los resultados de este torneo se reiniciarán.')) {
+        if (window.confirm('¿Quieres iniciar una contienda con los mismos gallos y cuerdas? Los resultados de este torneo se reiniciarán.')) {
             setPeleas([]);
             setMatchmakingResults(null);
-            setTournamentPhase('main');
             setScreen(Screen.SETUP);
-            addNotification('Listo para la revancha. Verifica los datos y comienza el cotejo.', 'info');
+            addNotification('Listo para la siguiente contienda. Verifica los datos y comienza el cotejo.', 'info');
         }
     }, [addNotification]);
 
@@ -413,7 +397,7 @@ const App: React.FC = () => {
     
     const finishedFights = useMemo(() => peleas.filter(p => p.winner !== null), [peleas]);
     const isTournamentInProgress = useMemo(() => peleas.length > 0 && peleas.some(p => p.winner === null), [peleas]);
-    const isTournamentFinished = useMemo(() => tournamentPhase === 'finished', [tournamentPhase]);
+    const isTournamentFinished = useMemo(() => peleas.length > 0 && peleas.every(p => p.winner !== null), [peleas]);
     
     const renderScreen = () => {
         switch (screen) {
@@ -441,11 +425,6 @@ const App: React.FC = () => {
                     totalFightsInPhase={peleas.length}
                 />;
             case Screen.RESULTS:
-                // FIX: Add a type guard to ensure `tournamentPhase` is not 'main' when rendering `ResultsScreen`, as the component's props only allow 'individual' or 'finished' phases.
-                if (tournamentPhase === 'main') {
-                    // This state should not be reachable with current logic, but serves as a safeguard.
-                    return null;
-                }
                  return <ResultsScreen 
                     peleas={finishedFights} 
                     torneo={torneo} 
@@ -453,9 +432,6 @@ const App: React.FC = () => {
                     onReset={handleReset}
                     onRematch={handleRematch}
                     onBack={handleBackToMatchmaking}
-                    tournamentPhase={tournamentPhase}
-                    onStartIndividualFights={handleStartIndividualFights}
-                    hasIndividualFights={!!matchmakingResults?.individualFights.length && tournamentPhase === 'individual'}
                 />;
             case Screen.SETUP:
             default:

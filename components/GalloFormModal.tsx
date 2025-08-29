@@ -138,6 +138,7 @@ interface GalloBulkFormData {
     weight: number; // total ounces
     ageMonths: string;
     markingId: string;
+    breederPlateId: string;
     tipoGallo: TipoGallo;
     marca: string;
 }
@@ -162,7 +163,7 @@ const GalloFormModal: React.FC<{
     const [stagedGallos, setStagedGallos] = useState<Record<string, Omit<Gallo, 'id' | 'tipoEdad'>[]>>({});
 
     const initialGalloFormState: GalloBulkFormData = {
-        ringId: '', color: '', cuerdaId: '', weight: 0, ageMonths: '', markingId: '', tipoGallo: TipoGallo.LISO, marca: '',
+        ringId: '', color: '', cuerdaId: '', weight: 0, ageMonths: '', markingId: '', breederPlateId: '', tipoGallo: TipoGallo.LISO, marca: '',
     };
     const [currentGalloForm, setCurrentGalloForm] = useState<GalloBulkFormData>(initialGalloFormState);
     
@@ -217,7 +218,13 @@ const GalloFormModal: React.FC<{
             return;
         }
 
-        onSaveSingle({ ...singleForm, marca: Number(singleForm.marca) }, gallo.id);
+        const finalData = {
+            ...singleForm,
+            marca: Number(singleForm.marca),
+            breederPlateId: singleForm.breederPlateId?.trim() || 'N/A'
+        };
+
+        onSaveSingle(finalData, gallo.id);
         onClose();
     };
 
@@ -274,6 +281,7 @@ const GalloFormModal: React.FC<{
             cuerdaId: activeTabCuerdaId,
             weight: currentGalloForm.weight,
             markingId: currentGalloForm.markingId,
+            breederPlateId: currentGalloForm.breederPlateId?.trim() || 'N/A',
             tipoGallo: currentGalloForm.tipoGallo,
             ageMonths: Number(currentGalloForm.ageMonths),
             marca: Number(currentGalloForm.marca),
@@ -331,14 +339,17 @@ const GalloFormModal: React.FC<{
         return (
             <form onSubmit={handleSingleSubmit} onKeyDown={handleFormKeyDown} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <InputField label="ID del Anillo" value={singleForm.ringId || ''} onChange={e => setSingleForm(p => ({...p, ringId: e.target.value}))} required />
-                    <InputField label="Color del Gallo" value={singleForm.color || ''} onChange={e => setSingleForm(p => ({...p, color: e.target.value}))} required />
+                    <InputField label="ID del Anillo (A)" value={singleForm.ringId || ''} onChange={e => setSingleForm(p => ({...p, ringId: e.target.value}))} required />
+                    <InputField label="Número de Placa Marcaje (Pm)" value={singleForm.markingId || ''} onChange={e => setSingleForm(p => ({...p, markingId: e.target.value}))} required />
                 </div>
-                <InputField 
-                    label="Cuerda" 
-                    value={cuerdas.find(c => c.id === singleForm.cuerdaId)?.name || ''} 
-                    disabled 
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <InputField label="Placa del Criadero (Pc)" value={singleForm.breederPlateId === 'N/A' ? '' : singleForm.breederPlateId || ''} onChange={e => setSingleForm(p => ({...p, breederPlateId: e.target.value}))} placeholder="N/A si se deja vacío" />
+                    <InputField 
+                        label="Cuerda" 
+                        value={cuerdas.find(c => c.id === singleForm.cuerdaId)?.name || ''} 
+                        disabled 
+                    />
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <LbsOzInput 
                         label="Peso (Lb.Oz)" 
@@ -346,9 +357,9 @@ const GalloFormModal: React.FC<{
                         onChange={v => setSingleForm(p => ({...p, weight: v}))}
                         validator={isWeightInTournamentRange}
                     />
-                     <InputField label="Tipo (Pollo/Gallo)" value={singleEditTipoEdad} disabled />
+                    <InputField label="Color del Gallo" value={singleForm.color || ''} onChange={e => setSingleForm(p => ({...p, color: e.target.value}))} required />
                 </div>
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-400 mb-1">Marca</label>
                         <select value={singleForm.marca || ''} onChange={e => {
@@ -369,13 +380,13 @@ const GalloFormModal: React.FC<{
                     </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <InputField label="Tipo (Pollo/Gallo)" value={singleEditTipoEdad} disabled />
                     <div>
                         <label className="block text-sm font-medium text-gray-400 mb-1">Fenotipo</label>
                         <select value={singleForm.tipoGallo} onChange={e => setSingleForm(p => ({...p, tipoGallo: e.target.value as TipoGallo}))} required className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition">
                             {Object.values(TipoGallo).map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                     </div>
-                    <InputField label="Número de Placa (Marcaje)" value={singleForm.markingId} onChange={e => setSingleForm(p => ({...p, markingId: e.target.value}))} required />
                 </div>
                 <div className="flex justify-end pt-4 space-x-2 border-t border-gray-700 mt-6">
                     <button type="button" onClick={onClose} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Cancelar</button>
@@ -436,7 +447,11 @@ const GalloFormModal: React.FC<{
                             <div className="p-4 bg-gray-900/50 rounded-lg space-y-4">
                                 <h4 className="font-bold text-amber-400">Añadir Gallo al Frente</h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <InputField label="ID del Anillo" value={currentGalloForm.ringId} onChange={e => handleBulkFormChange('ringId', e.target.value)} required disabled={isLimitReached}/>
+                                    <InputField label="ID del Anillo (A)" value={currentGalloForm.ringId} onChange={e => handleBulkFormChange('ringId', e.target.value)} required disabled={isLimitReached}/>
+                                    <InputField label="Número de Placa Marcaje (Pm)" value={currentGalloForm.markingId} onChange={e => handleBulkFormChange('markingId', e.target.value)} required disabled={isLimitReached}/>
+                                </div>
+                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <InputField label="Placa del Criadero (Pc)" value={currentGalloForm.breederPlateId} onChange={e => handleBulkFormChange('breederPlateId', e.target.value)} placeholder="N/A si se deja vacío" disabled={isLimitReached}/>
                                     <InputField label="Color del Gallo" value={currentGalloForm.color} onChange={e => handleBulkFormChange('color', e.target.value)} required disabled={isLimitReached}/>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -447,16 +462,15 @@ const GalloFormModal: React.FC<{
                                         disabled={isLimitReached}
                                         validator={isWeightInTournamentRange}
                                     />
-                                    <InputField label="Tipo (Pollo/Gallo)" value={bulkAddTipoEdad} disabled />
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                     <div>
+                                    <div>
                                         <label className="block text-sm font-medium text-gray-400 mb-1">Marca</label>
                                         <select value={currentGalloForm.marca} onChange={e => handleBulkFormChange('marca', e.target.value)} required className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition" disabled={isLimitReached}>
                                             <option value="" disabled>Seleccionar...</option>
                                             {Object.keys(AGE_OPTIONS_BY_MARCA).sort((a,b) => Number(a) - Number(b)).map(m => <option key={m} value={m}>Marca {m}</option>)}
                                         </select>
                                     </div>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-400 mb-1">Edad</label>
                                         <select value={currentGalloForm.ageMonths} onChange={e => handleBulkFormChange('ageMonths', e.target.value)} required disabled={isLimitReached || !currentGalloForm.marca || ageOptionsForBulk.length <= 1} className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition disabled:bg-gray-600">
@@ -464,6 +478,7 @@ const GalloFormModal: React.FC<{
                                             {ageOptionsForBulk.map(opt => <option key={opt.ageMonths} value={opt.ageMonths}>{opt.displayText}</option>)}
                                         </select>
                                     </div>
+                                    <InputField label="Tipo (Pollo/Gallo)" value={bulkAddTipoEdad} disabled />
                                 </div>
                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
@@ -472,7 +487,6 @@ const GalloFormModal: React.FC<{
                                             {Object.values(TipoGallo).map(t => <option key={t} value={t}>{t}</option>)}
                                         </select>
                                     </div>
-                                    <InputField label="Número de Placa" value={currentGalloForm.markingId} onChange={e => handleBulkFormChange('markingId', e.target.value)} required disabled={isLimitReached}/>
                                 </div>
                                 <button type="button" onClick={handleAddStagedGallo} disabled={isLimitReached || !currentGalloForm.ringId || !currentGalloForm.color || currentGalloForm.weight === 0} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed">
                                     {isLimitReached ? 'Límite de gallos alcanzado' : 'Añadir Gallo a este Frente'}

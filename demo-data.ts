@@ -952,6 +952,7 @@ export const processDemoData = (): { cuerdas: Cuerda[], gallos: Gallo[] } => {
                     weight: parseWeight(galloData.Peso),
                     ageMonths: ageMonths,
                     markingId: galloData["ID de Marcaje"],
+                    breederPlateId: 'N/A',
                     tipoGallo: galloData["tipo de gallo"],
                     tipoEdad: tipoEdad,
                     marca: marca,

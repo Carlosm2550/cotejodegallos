@@ -106,23 +106,28 @@ const LiveFightScreen: React.FC<LiveFightScreenProps> = ({ peleas, onFinishFight
   const formatRoosterDetails = (rooster: Gallo) => {
       return `${formatWeightLbsOz(rooster.weight)} Lb.Oz / ${rooster.ageMonths}m / ${rooster.tipoGallo}`
   }
+  
+  const formatRoosterExtraDetails = (rooster: Gallo) => {
+    return `A:${rooster.ringId} Pm:${rooster.markingId} Pc:${rooster.breederPlateId} Marca:${rooster.marca}`;
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] text-white p-4">
       {/* Top Title Section */}
       <div className="text-center mb-8">
         <h2 className="text-5xl md:text-6xl font-extrabold tracking-tight text-amber-400">Pelea #{currentFight.fightNumber}</h2>
-        <p className="text-lg md:text-xl text-gray-400 mt-2">Pelea {finishedFightsCount + 1} de {totalFightsInPhase} en esta fase</p>
+        <p className="text-lg md:text-xl text-gray-400 mt-2">Pelea {finishedFightsCount + 1} de {totalFightsInPhase}</p>
       </div>
 
       {/* Main Fight Display */}
       <div className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-stretch gap-4 md:gap-8 mb-8">
         
         {/* Rooster A Panel (Left) */}
-        <div className="bg-blue-900/30 border-2 border-blue-600 rounded-2xl p-6 text-center md:text-right flex flex-col items-center md:items-end justify-center shadow-lg transform hover:scale-[1.02] transition-transform duration-300">
+        <div className="bg-blue-900/30 border-2 border-blue-600 rounded-2xl p-6 text-center md:text-right flex flex-col items-center md:items-end justify-center shadow-lg transform hover:scale-[1.02] transition-transform duration-300 space-y-2">
             <p className="text-4xl md:text-5xl lg:text-6xl text-amber-400 font-bold break-words">{getCuerdaName(currentFight.roosterA.cuerdaId)}</p>
-            <h3 className="text-2xl lg:text-3xl font-semibold mt-2 text-white">{currentFight.roosterA.color}</h3>
-            <p className="text-xl lg:text-2xl text-gray-300 mt-4 font-mono">{formatRoosterDetails(currentFight.roosterA)}</p>
+            <h3 className="text-2xl lg:text-3xl font-semibold text-white">{currentFight.roosterA.color}</h3>
+            <p className="text-xl lg:text-2xl text-gray-300 font-mono">{formatRoosterDetails(currentFight.roosterA)}</p>
+            <p className="text-xs text-gray-400 font-mono">{formatRoosterExtraDetails(currentFight.roosterA)}</p>
         </div>
         
         {/* VS Separator */}
@@ -131,10 +136,11 @@ const LiveFightScreen: React.FC<LiveFightScreenProps> = ({ peleas, onFinishFight
         </div>
 
         {/* Rooster B Panel (Right) */}
-         <div className="bg-red-900/30 border-2 border-red-600 rounded-2xl p-6 text-center md:text-left flex flex-col items-center md:items-start justify-center shadow-lg transform hover:scale-[1.02] transition-transform duration-300">
+         <div className="bg-red-900/30 border-2 border-red-600 rounded-2xl p-6 text-center md:text-left flex flex-col items-center md:items-start justify-center shadow-lg transform hover:scale-[1.02] transition-transform duration-300 space-y-2">
             <p className="text-4xl md:text-5xl lg:text-6xl text-amber-400 font-bold break-words">{getCuerdaName(currentFight.roosterB.cuerdaId)}</p>
-            <h3 className="text-2xl lg:text-3xl font-semibold mt-2 text-white">{currentFight.roosterB.color}</h3>
-            <p className="text-xl lg:text-2xl text-gray-300 mt-4 font-mono">{formatRoosterDetails(currentFight.roosterB)}</p>
+            <h3 className="text-2xl lg:text-3xl font-semibold text-white">{currentFight.roosterB.color}</h3>
+            <p className="text-xl lg:text-2xl text-gray-300 font-mono">{formatRoosterDetails(currentFight.roosterB)}</p>
+            <p className="text-xs text-gray-400 font-mono">{formatRoosterExtraDetails(currentFight.roosterB)}</p>
         </div>
       </div>
 

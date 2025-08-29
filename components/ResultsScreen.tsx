@@ -27,12 +27,9 @@ interface ResultsScreenProps {
     onReset: () => void;
     onRematch: () => void;
     onBack: () => void;
-    tournamentPhase: 'individual' | 'finished';
-    onStartIndividualFights: () => void;
-    hasIndividualFights: boolean;
 }
 
-const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, onReset, onRematch, onBack, tournamentPhase, onStartIndividualFights, hasIndividualFights }) => {
+const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, onReset, onRematch, onBack }) => {
     
     const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'points', direction: 'desc' });
     const [expandedCuerdas, setExpandedCuerdas] = useState<string[]>([]);
@@ -166,6 +163,17 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
         return { minutes, seconds };
     };
 
+    const fastestWinners = useMemo(() => {
+        const winners: { rooster: Gallo, duration: number }[] = [];
+        peleas.forEach(p => {
+            if (p.winner && p.winner !== 'DRAW' && p.duration !== null && p.duration > 0) {
+                const winnerRooster = p.winner === 'A' ? p.roosterA : p.roosterB;
+                winners.push({ rooster: winnerRooster, duration: p.duration });
+            }
+        });
+        return winners.sort((a, b) => a.duration - b.duration).slice(0, 10);
+    }, [peleas]);
+
     const handlePrint = () => {
         document.body.classList.add('printing-results');
         setExpandedCuerdas(stats.map(s => s.cuerdaId)); // Expand all for printing
@@ -271,23 +279,49 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
                 </div>
             </div>
 
+             <div className="bg-gray-800/50 rounded-2xl shadow-lg border border-gray-700 p-4 sm:p-6 mt-8">
+                <h3 className="text-xl font-bold text-amber-400 mb-4">Top 10 Gallos Más Rápidos</h3>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left text-gray-300">
+                        <thead className="text-xs text-amber-400 uppercase bg-gray-700/50">
+                            <tr>
+                                <th scope="col" className="px-4 py-3 text-center">#</th>
+                                <th scope="col" className="px-6 py-3">Gallo</th>
+                                <th scope="col" className="px-6 py-3">Cuerda</th>
+                                <th scope="col" className="px-4 py-3 text-center">Tiempo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {fastestWinners.map((winner, index) => {
+                                const { minutes, seconds } = formatTime(winner.duration);
+                                return (
+                                    <tr key={winner.rooster.id + '-' + index} className="border-b border-gray-700">
+                                        <td className="px-4 py-3 font-bold text-center">{index + 1}</td>
+                                        <td className="px-6 py-3 font-semibold text-white">{winner.rooster.color}</td>
+                                        <td className="px-6 py-3">{getCuerdaName(winner.rooster.cuerdaId)}</td>
+                                        <td className="px-4 py-3 text-center font-mono">{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}</td>
+                                    </tr>
+                                )
+                            })}
+                            {fastestWinners.length === 0 && (
+                                <tr>
+                                    <td colSpan={4} className="text-center py-4 text-gray-500">No hay peleas ganadas para mostrar.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8 print-hide">
                  <button onClick={onBack} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-8 rounded-lg text-lg">Atrás</button>
-                 {tournamentPhase === 'individual' && hasIndividualFights ? (
-                    <button onClick={onStartIndividualFights} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg">
-                        Iniciar Peleas Individuales
-                    </button>
-                 ) : (
-                    <>
-                        <button onClick={onRematch} className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg text-lg flex items-center space-x-2">
-                           <RepeatIcon className="w-5 h-5"/>
-                           <span>Revancha (Mismos Gallos)</span>
-                        </button>
-                        <button onClick={onReset} className="bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-3 px-8 rounded-lg text-lg">
-                            Nuevo Torneo (Borrar Todo)
-                        </button>
-                    </>
-                 )}
+                <button onClick={onRematch} className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg text-lg flex items-center space-x-2">
+                   <RepeatIcon className="w-5 h-5"/>
+                   <span>Mismos Gallos</span>
+                </button>
+                <button onClick={onReset} className="bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-3 px-8 rounded-lg text-lg">
+                    Nuevo Torneo (Borrar Todo)
+                </button>
             </div>
         </div>
     );

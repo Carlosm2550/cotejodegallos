@@ -80,16 +80,18 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
         document.body.classList.remove('printing-cartelera');
     };
 
-    const renderPelea = (pelea: Pelea, index: number) => (
+    const renderPelea = (pelea: Pelea) => (
         <div key={pelea.id} className="bg-gray-700/50 rounded-lg p-6 flex items-center justify-between fight-card">
-            <div className="w-1/12 text-center text-gray-400 font-bold text-3xl">{index + 1}</div>
+            <div className="w-1/12 text-center text-gray-400 font-bold text-3xl">{pelea.fightNumber}</div>
             
             {/* Rooster A */}
             <div className="w-5/12 text-right pr-4 space-y-2">
                 <p className="font-bold text-4xl text-amber-400 truncate">{getCuerdaName(pelea.roosterA.cuerdaId)}</p>
                 <p className="font-semibold text-white text-2xl">{pelea.roosterA.color}</p>
                 <p className="text-lg font-mono text-gray-300">{formatWeightLbsOz(pelea.roosterA.weight)} / {pelea.roosterA.ageMonths || 'N/A'}m / {pelea.roosterA.tipoGallo}</p>
-                <p className="text-base text-gray-500 font-mono">A:{pelea.roosterA.ringId} M:{pelea.roosterA.markingId}</p>
+                <p className="text-xs text-gray-500 font-mono">
+                    A:{pelea.roosterA.ringId} Pm:{pelea.roosterA.markingId} Pc:{pelea.roosterA.breederPlateId} Marca:{pelea.roosterA.marca}
+                </p>
             </div>
 
             <div className="w-1/12 text-center text-red-500 font-extrabold text-5xl">VS</div>
@@ -99,13 +101,16 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
                 <p className="font-bold text-4xl text-amber-400 truncate">{getCuerdaName(pelea.roosterB.cuerdaId)}</p>
                 <p className="font-semibold text-white text-2xl">{pelea.roosterB.color}</p>
                 <p className="text-lg font-mono text-gray-300">{formatWeightLbsOz(pelea.roosterB.weight)} / {pelea.roosterB.ageMonths || 'N/A'}m / {pelea.roosterB.tipoGallo}</p>
-                <p className="text-base text-gray-500 font-mono">A:{pelea.roosterB.ringId} M:{pelea.roosterB.markingId}</p>
+                <p className="text-xs text-gray-500 font-mono">
+                     A:{pelea.roosterB.ringId} Pm:{pelea.roosterB.markingId} Pc:{pelea.roosterB.breederPlateId} Marca:{pelea.roosterB.marca}
+                </p>
             </div>
         </div>
     );
     
-    const totalRoostersForIndividualRound = results.unpairedRoosters.length + (results.individualFights.length * 2);
-    const totalFights = results.mainFights.length;
+    const totalRoostersForIndividualRound = results.unpairedRoosters.length;
+    const manualFightsCount = results.mainFights.filter(f => f.id.startsWith('pelea-manual-')).length;
+    const autoFightsCount = results.mainFights.length - manualFightsCount;
 
     return (
         <div className="space-y-6 print-target">
@@ -116,14 +121,14 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
             
             <div className="bg-gray-800/50 rounded-2xl shadow-lg border border-gray-700 p-4">
                 <h3 className="text-xl font-bold text-amber-400 mb-3">Estadísticas de la Contienda</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-center">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
                     <div className="bg-gray-700/50 p-3 rounded-lg">
-                        <p className="text-2xl font-bold text-white">{totalFights}</p>
-                        <p className="text-sm text-gray-400">Peleas Principales</p>
+                        <p className="text-2xl font-bold text-white">{autoFightsCount}</p>
+                        <p className="text-sm text-gray-400">Peleas de Cotejo</p>
                     </div>
                      <div className="bg-gray-700/50 p-3 rounded-lg">
-                        <p className="text-2xl font-bold text-white">{results.individualFights.length}</p>
-                        <p className="text-sm text-gray-400">Peleas Individuales</p>
+                        <p className="text-2xl font-bold text-white">{manualFightsCount}</p>
+                        <p className="text-sm text-gray-400">Peleas Manuales</p>
                     </div>
                     <div className="bg-gray-700/50 p-3 rounded-lg">
                         <p className="text-2xl font-bold text-white">{results.stats.mainTournamentRoostersCount}</p>
@@ -137,26 +142,19 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
             </div>
 
             <div className="space-y-4 printable-card">
-                <h3 className="text-xl font-bold text-amber-400">Peleas Principales</h3>
+                <h3 className="text-xl font-bold text-amber-400">Cartelera Principal</h3>
                 {results.mainFights.length > 0 ? (
                     <div className="space-y-2">
                         {results.mainFights.map(renderPelea)}
                     </div>
                 ) : (
-                    <p className="text-center text-gray-400 py-6">No se generaron peleas para el torneo principal.</p>
+                    <p className="text-center text-gray-400 py-6">No se generaron peleas.</p>
                 )}
             </div>
 
             {totalRoostersForIndividualRound > 0 && (
                 <div className="bg-gray-800/50 rounded-2xl shadow-lg border border-gray-700 p-4 mt-8">
                     <h3 className="text-xl font-bold text-amber-400 mb-4">Contiendas Manuales</h3>
-                    
-                    {results.individualFights.length > 0 && (
-                        <div className="space-y-2 mb-6 printable-card">
-                            <h4 className="text-amber-400 mb-2 text-base">Peleas Individuales Creadas:</h4>
-                            {results.individualFights.map((pelea, index) => renderPelea(pelea, results.mainFights.length + index))}
-                        </div>
-                    )}
 
                     {results.unpairedRoosters.length > 0 && (
                         <div>
@@ -235,13 +233,10 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
                         </div>
                     )}
                     
-                    {totalRoostersForIndividualRound > 0 && results.unpairedRoosters.length === 0 && results.individualFights.length > 0 && (
-                        <p className="text-gray-400 text-center py-4">Todos los gallos sobrantes han sido emparejados.</p>
+                    {results.unpairedRoosters.length === 0 && (
+                        <p className="text-gray-400 text-center py-4">Todos los gallos disponibles han sido emparejados.</p>
                     )}
 
-                    {totalRoostersForIndividualRound === 0 && (
-                        <p className="text-center text-gray-400 py-6">No hay gallos sobrantes.</p>
-                    )}
                 </div>
             )}
             <div className="flex justify-between items-center mt-8 print-hide">
