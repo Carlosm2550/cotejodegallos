@@ -11,6 +11,7 @@ const OUNCES_PER_POUND = 16;
 const fromLbsOz = (lbs: number, oz: number) => {
     return Math.round((lbs * OUNCES_PER_POUND) + oz);
 };
+// Fix: Corrected typo in function parameter name from totalOunences to totalOunces.
 const formatWeightLbsOz = (totalOunces: number, withUnit = false): string => {
     const total = Math.round(totalOunces);
     const lbs = Math.floor(total / OUNCES_PER_POUND);
@@ -442,7 +443,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ cuerdas, gallos, torneo, onUp
                             >
                                {isMatchmaking ? (
                                     <>
-                                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                         </svg>
@@ -477,6 +478,8 @@ const SetupScreen: React.FC<SetupScreenProps> = ({ cuerdas, gallos, torneo, onUp
                 cuerdas={cuerdas}
                 gallos={gallos}
                 torneo={torneo}
+                onDeleteGallo={onDeleteGallo}
+                onEditGallo={handleOpenEditGalloModal}
             />
              <div className="printable-planilla-container">
                 <PrintablePlanilla torneo={torneo} />

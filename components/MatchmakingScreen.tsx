@@ -261,7 +261,7 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
                 </div>
             </div>
             
-            {isEditModalOpen && (
+            {isEditModalOpen && editingGallo && (
                 <GalloFormModal 
                     isOpen={isEditModalOpen}
                     onClose={() => setEditModalOpen(false)}
@@ -271,6 +271,9 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
                     cuerdas={cuerdas}
                     gallos={gallos}
                     torneo={torneo}
+                    // Fix: Provide dummy functions for props required by the component but not used in single-edit mode.
+                    onDeleteGallo={() => {}}
+                    onEditGallo={() => {}}
                 />
             )}
         </div>

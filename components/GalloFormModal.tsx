@@ -1,4 +1,7 @@
 
+
+
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Cuerda, Gallo, Torneo, TipoGallo, TipoEdad } from '../types';
 import { TrashIcon, ChevronDownIcon, ChevronUpIcon, PencilIcon } from './Icons';
@@ -153,7 +156,9 @@ const GalloFormModal: React.FC<{
     cuerdas: Cuerda[];
     gallos: Gallo[];
     torneo: Torneo;
-}> = ({ isOpen, onClose, onSaveSingle, onSaveBulk, gallo, cuerdas, gallos, torneo }) => {
+    onDeleteGallo: (galloId: string) => void;
+    onEditGallo: (gallo: Gallo) => void;
+}> = ({ isOpen, onClose, onSaveSingle, onSaveBulk, gallo, cuerdas, gallos, torneo, onDeleteGallo, onEditGallo }) => {
     
     // --- State for Single Edit Mode ---
     const [singleForm, setSingleForm] = useState<Omit<Gallo, 'id' | 'tipoEdad'>>({} as any);
@@ -307,6 +312,12 @@ const GalloFormModal: React.FC<{
         });
         setEditingStagedIndex(index);
     };
+    
+    const handleDeleteExistingGallo = (gallo: Gallo) => {
+        if (window.confirm(`¿Está seguro de que desea eliminar al gallo "${gallo.color}" (Anillo: ${gallo.ringId}) de forma permanente?`)) {
+            onDeleteGallo(gallo.id);
+        }
+    };
 
     const handleCancelEdit = () => {
         setEditingStagedIndex(null);
@@ -411,17 +422,42 @@ const GalloFormModal: React.FC<{
         const addButtonText = isLimitReached && !isEditing ? 'Límite de gallos alcanzado' : isEditing ? 'Guardar Cambios' : 'Añadir Gallo a este Frente';
         const hasStagedGallos = Object.values(stagedGallos).some(arr => arr.length > 0);
 
+        const existingGallosForTab = gallosByCuerda.get(activeTabCuerdaId) || [];
+        const stagedGallosForTab = stagedGallos[activeTabCuerdaId] || [];
+        const hasAnyGallos = existingGallosForTab.length > 0 || stagedGallosForTab.length > 0;
+
         return (
             <div onKeyDown={handleFormKeyDown}>
                 <fieldset disabled={!isCuerdaSelected} className="disabled:opacity-40 transition-opacity">
-                    <div className="space-y-2 max-h-48 overflow-y-auto pr-2 mb-4">
-                        {(stagedGallos[activeTabCuerdaId] || []).map((g, index) => {
+                     <div className="space-y-2 max-h-48 overflow-y-auto pr-2 mb-4">
+                        {isCuerdaSelected && !hasAnyGallos && <p className="text-gray-500 text-center text-sm py-2">Aún no hay gallos para este frente.</p>}
+                        {!isCuerdaSelected && <p className="text-gray-500 text-center text-sm py-8">Seleccione una cuerda para añadir gallos.</p>}
+
+                        {/* Display existing gallos */}
+                        {existingGallosForTab.map((g) => {
                             const tipoEdad = g.ageMonths < 12 ? TipoEdad.POLLO : TipoEdad.GALLO;
-                            const fullDescription = `${g.color}: A:${g.ringId} / Pm:${g.markingId} / Pc:${g.breederPlateId} / Marca:${g.marca} / ${tipoEdad} / ${g.tipoGallo}`;
+                            const fullDescription = `${g.color}: A:${g.ringId} / Pm:${g.markingId} / Pc:${g.breederPlateId} / Marca:${g.marca} / ${tipoEdad} / ${g.tipoGallo} / ${formatWeightLbsOz(g.weight)} (Lb.Oz)`;
+                            return (
+                                <div key={g.id} className="flex items-center justify-between bg-gray-800/40 p-2 rounded-lg text-sm">
+                                    <p className="text-white truncate flex-grow text-xs" title={fullDescription}>
+                                        <span className="font-bold text-amber-400">{g.color}</span>: A:{g.ringId} / Pm:{g.markingId} / Pc:${g.breederPlateId} / Marca:${g.marca} / {tipoEdad} / {g.tipoGallo} / ${formatWeightLbsOz(g.weight)} (Lb.Oz)
+                                    </p>
+                                    <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
+                                        <button onClick={() => onEditGallo(g)} className="p-1 text-gray-400 hover:text-amber-400 transition-colors"><PencilIcon className="w-4 h-4"/></button>
+                                        <button onClick={() => handleDeleteExistingGallo(g)} className="p-1 text-gray-400 hover:text-red-500 transition-colors"><TrashIcon className="w-4 h-4"/></button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+
+                        {/* Display staged gallos */}
+                        {stagedGallosForTab.map((g, index) => {
+                            const tipoEdad = g.ageMonths < 12 ? TipoEdad.POLLO : TipoEdad.GALLO;
+                            const fullDescription = `${g.color}: A:${g.ringId} / Pm:${g.markingId} / Pc:${g.breederPlateId} / Marca:${g.marca} / ${tipoEdad} / ${g.tipoGallo} / ${formatWeightLbsOz(g.weight)} (Lb.Oz)`;
                             return (
                                 <div key={index} className="flex items-center justify-between bg-gray-700/50 p-2 rounded-lg text-sm">
                                     <p className="text-white truncate flex-grow text-xs" title={fullDescription}>
-                                        <span className="font-bold text-amber-400">{g.color}</span>: A:{g.ringId} / Pm:{g.markingId} / Pc:{g.breederPlateId} / Marca:{g.marca} / {tipoEdad} / {g.tipoGallo}
+                                        <span className="font-bold text-amber-400">{g.color}</span>: A:{g.ringId} / Pm:{g.markingId} / Pc:${g.breederPlateId} / Marca:${g.marca} / {tipoEdad} / {g.tipoGallo} / ${formatWeightLbsOz(g.weight)} (Lb.Oz)
                                     </p>
                                     <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
                                         <button onClick={() => handleEditStagedClick(index)} className="p-1 text-gray-400 hover:text-amber-400"><PencilIcon className="w-4 h-4"/></button>
@@ -430,8 +466,6 @@ const GalloFormModal: React.FC<{
                                 </div>
                             )
                         })}
-                        {isCuerdaSelected && (stagedGallos[activeTabCuerdaId]?.length || 0) === 0 && <p className="text-gray-500 text-center text-sm py-2">Aún no hay gallos para este frente.</p>}
-                        {!isCuerdaSelected && <p className="text-gray-500 text-center text-sm py-8">Seleccione una cuerda para añadir gallos.</p>}
                     </div>
 
                     <div className="p-4 bg-gray-900/50 rounded-lg space-y-4">
@@ -508,23 +542,41 @@ const GalloFormModal: React.FC<{
     const titleWithTabs = (
         <>
             <span className="mr-6 shrink-0">Añadir Gallos</span>
-            <div className="flex items-center border-b border-transparent -mb-[21px] overflow-x-auto">
-                {frontsForSelectedCuerda.map((front, index) => {
-                    const currentExistingCount = gallosByCuerda.get(front.id)?.length || 0;
-                    const currentStagedCount = stagedGallos[front.id]?.length || 0;
-                    const totalCount = currentExistingCount + currentStagedCount;
-                    const limit = torneo.roostersPerTeam;
-                    const tabText = limit > 0 ? `F${index + 1} (${totalCount}/${limit})` : `F${index + 1} (${totalCount})`;
-                    return (
-                        <button 
-                            key={front.id} 
-                            onClick={() => handleTabClick(front.id)} 
-                            className={`py-2 px-3 text-sm font-medium transition-colors whitespace-nowrap ${activeTabCuerdaId === front.id ? 'border-b-2 border-amber-500 text-amber-400' : 'text-gray-400 hover:text-white'}`}
-                        >
-                            {tabText}
-                        </button>
-                    );
-                })}
+            <div className="flex-grow relative min-w-0">
+                <div className="front-tabs-container flex items-center border-b border-transparent -mb-[21px] overflow-x-auto pb-2">
+                    {frontsForSelectedCuerda.map((front, index) => {
+                        const currentExistingCount = gallosByCuerda.get(front.id)?.length || 0;
+                        const currentStagedCount = stagedGallos[front.id]?.length || 0;
+                        const totalCount = currentExistingCount + currentStagedCount;
+                        const limit = torneo.roostersPerTeam;
+                        const tabText = limit > 0 ? `F${index + 1} (${totalCount}/${limit})` : `F${index + 1} (${totalCount})`;
+                        return (
+                            <button 
+                                key={front.id} 
+                                onClick={() => handleTabClick(front.id)} 
+                                className={`py-2 px-3 text-sm font-medium transition-all transform whitespace-nowrap ${activeTabCuerdaId === front.id ? 'border-b-2 border-amber-500 text-amber-400' : 'text-gray-300 hover:text-white hover:scale-105'}`}
+                            >
+                                {tabText}
+                            </button>
+                        );
+                    })}
+                     <style>{`
+                        .front-tabs-container::-webkit-scrollbar {
+                            height: 6px;
+                        }
+                        .front-tabs-container::-webkit-scrollbar-track {
+                            background: #2d3748; 
+                            border-radius: 3px;
+                        }
+                        .front-tabs-container::-webkit-scrollbar-thumb {
+                            background: #718096;
+                            border-radius: 3px;
+                        }
+                        .front-tabs-container::-webkit-scrollbar-thumb:hover {
+                            background: #a0aec0;
+                        }
+                    `}</style>
+                </div>
             </div>
         </>
     );
