@@ -2,6 +2,8 @@
 
 
 
+
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Cuerda, Gallo, Torneo, TipoGallo, TipoEdad } from '../types';
 import { TrashIcon, ChevronDownIcon, ChevronUpIcon, PencilIcon } from './Icons';
@@ -158,7 +160,7 @@ const GalloFormModal: React.FC<{
     torneo: Torneo;
     onDeleteGallo: (galloId: string) => void;
     onEditGallo: (gallo: Gallo) => void;
-}> = ({ isOpen, onClose, onSaveSingle, onSaveBulk, gallo, cuerdas, gallos, torneo, onDeleteGallo, onEditGallo }) => {
+}> = ({ isOpen, onClose, onSaveSingle, onSaveBulk, gallo, cuerdas, gallos, torneo, onDeleteGallo }) => {
     
     // --- State for Single Edit Mode ---
     const [singleForm, setSingleForm] = useState<Omit<Gallo, 'id' | 'tipoEdad'>>({} as any);
@@ -168,6 +170,7 @@ const GalloFormModal: React.FC<{
     const [activeTabCuerdaId, setActiveTabCuerdaId] = useState('');
     const [stagedGallos, setStagedGallos] = useState<Record<string, Omit<Gallo, 'id' | 'tipoEdad'>[]>>({});
     const [editingStagedIndex, setEditingStagedIndex] = useState<number | null>(null);
+    const [editingExistingGallo, setEditingExistingGallo] = useState<Gallo | null>(null);
 
     const initialGalloFormState: GalloBulkFormData = {
         ringId: '', color: '', cuerdaId: '', weight: 0, ageMonths: '', markingId: '', breederPlateId: '', tipoGallo: TipoGallo.LISO, marca: '',
@@ -207,6 +210,7 @@ const GalloFormModal: React.FC<{
                 setStagedGallos({});
                 setCurrentGalloForm(initialGalloFormState);
                 setEditingStagedIndex(null);
+                setEditingExistingGallo(null);
             }
         }
     }, [isOpen, gallo]);
@@ -242,12 +246,14 @@ const GalloFormModal: React.FC<{
         setStagedGallos({});
         setCurrentGalloForm({ ...initialGalloFormState, cuerdaId: firstFront?.id || '' });
         setEditingStagedIndex(null);
+        setEditingExistingGallo(null);
     };
 
     const handleTabClick = (cuerdaId: string) => {
         setActiveTabCuerdaId(cuerdaId);
         setCurrentGalloForm({ ...initialGalloFormState, cuerdaId });
         setEditingStagedIndex(null);
+        setEditingExistingGallo(null);
     };
 
     const handleBulkFormChange = (field: keyof GalloBulkFormData, value: string | number) => {
@@ -264,9 +270,12 @@ const GalloFormModal: React.FC<{
         setCurrentGalloForm(newFormState);
     };
     
-    const handleSaveOrAddStagedGallo = () => {
-        const isEditing = editingStagedIndex !== null;
-        if (!isEditing) {
+    const handleBulkFormSubmit = () => {
+        const isEditingStaged = editingStagedIndex !== null;
+        const isEditingExisting = editingExistingGallo !== null;
+        const isAdding = !isEditingStaged && !isEditingExisting;
+
+        if (isAdding) {
             const existingCount = gallosByCuerda.get(activeTabCuerdaId)?.length || 0;
             const stagedCount = (stagedGallos[activeTabCuerdaId] || []).length;
             const totalCount = existingCount + stagedCount;
@@ -294,14 +303,18 @@ const GalloFormModal: React.FC<{
             ageMonths: Number(currentGalloForm.ageMonths), marca: Number(currentGalloForm.marca),
         };
 
-        if (isEditing) {
+        if (isEditingExisting) {
+            onSaveSingle(newGalloData, editingExistingGallo.id);
+            setEditingExistingGallo(null);
+        } else if (isEditingStaged) {
             const updatedStaged = [...(stagedGallos[activeTabCuerdaId] || [])];
             updatedStaged[editingStagedIndex] = newGalloData;
             setStagedGallos(prev => ({ ...prev, [activeTabCuerdaId]: updatedStaged }));
+            setEditingStagedIndex(null);
         } else {
             setStagedGallos(prev => ({ ...prev, [activeTabCuerdaId]: [...(prev[activeTabCuerdaId] || []), newGalloData] }));
         }
-        setEditingStagedIndex(null);
+        
         setCurrentGalloForm({ ...initialGalloFormState, cuerdaId: activeTabCuerdaId });
     };
 
@@ -311,6 +324,18 @@ const GalloFormModal: React.FC<{
             ...roosterToEdit, ageMonths: String(roosterToEdit.ageMonths), marca: String(roosterToEdit.marca),
         });
         setEditingStagedIndex(index);
+        setEditingExistingGallo(null);
+    };
+
+    const handleEditExistingClick = (galloToEdit: Gallo) => {
+        setEditingExistingGallo(galloToEdit);
+        setCurrentGalloForm({
+            ...galloToEdit,
+            breederPlateId: galloToEdit.breederPlateId === 'N/A' ? '' : galloToEdit.breederPlateId,
+            ageMonths: String(galloToEdit.ageMonths),
+            marca: String(galloToEdit.marca),
+        });
+        setEditingStagedIndex(null);
     };
     
     const handleDeleteExistingGallo = (gallo: Gallo) => {
@@ -321,6 +346,7 @@ const GalloFormModal: React.FC<{
 
     const handleCancelEdit = () => {
         setEditingStagedIndex(null);
+        setEditingExistingGallo(null);
         setCurrentGalloForm({ ...initialGalloFormState, cuerdaId: activeTabCuerdaId });
     };
 
@@ -416,8 +442,12 @@ const GalloFormModal: React.FC<{
         const ageOptionsForBulk = AGE_OPTIONS_BY_MARCA[currentGalloForm.marca] || [];
         const existingCount = gallosByCuerda.get(activeTabCuerdaId)?.length || 0;
         const stagedCount = (stagedGallos[activeTabCuerdaId] || []).length;
+        
+        const isEditingStaged = editingStagedIndex !== null;
+        const isEditingExisting = editingExistingGallo !== null;
+        const isEditing = isEditingStaged || isEditingExisting;
+
         const isLimitReached = torneo.roostersPerTeam > 0 && (existingCount + stagedCount) >= torneo.roostersPerTeam;
-        const isEditing = editingStagedIndex !== null;
         const isAddButtonDisabled = (isLimitReached && !isEditing) || !currentGalloForm.ringId || !currentGalloForm.color || currentGalloForm.weight === 0 || !selectedCuerdaId;
         const addButtonText = isLimitReached && !isEditing ? 'Límite de gallos alcanzado' : isEditing ? 'Guardar Cambios' : 'Añadir Gallo a este Frente';
         const hasStagedGallos = Object.values(stagedGallos).some(arr => arr.length > 0);
@@ -440,10 +470,10 @@ const GalloFormModal: React.FC<{
                             return (
                                 <div key={g.id} className="flex items-center justify-between bg-gray-800/40 p-2 rounded-lg text-sm">
                                     <p className="text-white truncate flex-grow text-xs" title={fullDescription}>
-                                        <span className="font-bold text-amber-400">{g.color}</span>: A:{g.ringId} / Pm:{g.markingId} / Pc:${g.breederPlateId} / Marca:${g.marca} / {tipoEdad} / {g.tipoGallo} / ${formatWeightLbsOz(g.weight)} (Lb.Oz)
+                                        <span className="font-bold text-amber-400">{g.color}</span>: A:{g.ringId} / Pm:{g.markingId} / Pc:{g.breederPlateId} / Marca:{g.marca} / {tipoEdad} / {g.tipoGallo} / {formatWeightLbsOz(g.weight)} (Lb.Oz)
                                     </p>
                                     <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
-                                        <button onClick={() => onEditGallo(g)} className="p-1 text-gray-400 hover:text-amber-400 transition-colors"><PencilIcon className="w-4 h-4"/></button>
+                                        <button onClick={() => handleEditExistingClick(g)} className="p-1 text-gray-400 hover:text-amber-400 transition-colors"><PencilIcon className="w-4 h-4"/></button>
                                         <button onClick={() => handleDeleteExistingGallo(g)} className="p-1 text-gray-400 hover:text-red-500 transition-colors"><TrashIcon className="w-4 h-4"/></button>
                                     </div>
                                 </div>
@@ -457,7 +487,7 @@ const GalloFormModal: React.FC<{
                             return (
                                 <div key={index} className="flex items-center justify-between bg-gray-700/50 p-2 rounded-lg text-sm">
                                     <p className="text-white truncate flex-grow text-xs" title={fullDescription}>
-                                        <span className="font-bold text-amber-400">{g.color}</span>: A:{g.ringId} / Pm:{g.markingId} / Pc:${g.breederPlateId} / Marca:${g.marca} / {tipoEdad} / {g.tipoGallo} / ${formatWeightLbsOz(g.weight)} (Lb.Oz)
+                                        <span className="font-bold text-amber-400">{g.color}</span>: A:{g.ringId} / Pm:{g.markingId} / Pc:${g.breederPlateId} / Marca:${g.marca} / ${tipoEdad} / ${g.tipoGallo} / ${formatWeightLbsOz(g.weight)} (Lb.Oz)
                                     </p>
                                     <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
                                         <button onClick={() => handleEditStagedClick(index)} className="p-1 text-gray-400 hover:text-amber-400"><PencilIcon className="w-4 h-4"/></button>
@@ -502,12 +532,18 @@ const GalloFormModal: React.FC<{
                             </div>
                         </div>
                         <div className="pt-2">
-                            <button type="button" onClick={handleSaveOrAddStagedGallo} disabled={isAddButtonDisabled} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed text-center">
-                                {addButtonText}
-                            </button>
-                            {isEditing && (
-                                <button type="button" onClick={handleCancelEdit} className="w-full bg-gray-500 hover:bg-gray-400 text-white font-bold py-2 px-4 rounded-lg mt-2">
-                                    Cancelar Edición
+                            {isEditing ? (
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button type="button" onClick={handleBulkFormSubmit} disabled={isAddButtonDisabled} className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed text-center">
+                                        {addButtonText}
+                                    </button>
+                                    <button type="button" onClick={handleCancelEdit} className="w-full bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">
+                                        Cancelar Edición
+                                    </button>
+                                </div>
+                            ) : (
+                                <button type="button" onClick={handleBulkFormSubmit} disabled={isAddButtonDisabled} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed text-center">
+                                    {addButtonText}
                                 </button>
                             )}
                         </div>
