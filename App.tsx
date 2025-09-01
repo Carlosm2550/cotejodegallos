@@ -178,11 +178,20 @@ const App: React.FC = () => {
             if (frontCount < existingFronts.length) {
                 const frontsToRemove = existingFronts.slice(frontCount);
                 const frontIdsToRemove = new Set(frontsToRemove.map(f => f.id));
-                 if (gallos.some(g => frontIdsToRemove.has(g.cuerdaId))) {
-                    addNotification('No se pueden eliminar frentes que ya tienen gallos asignados.', 'error');
-                    return;
+                 const gallosInFrontsToRemoveCount = gallos.filter(g => frontIdsToRemove.has(g.cuerdaId)).length;
+
+                let confirmMessage = `Va a reducir el número de frentes a ${frontCount}. ${frontsToRemove.length} frente(s) será(n) eliminado(s).`;
+                if (gallosInFrontsToRemoveCount > 0) {
+                    confirmMessage += ` Esto también eliminará ${gallosInFrontsToRemoveCount} gallo(s) asignado(s) a estos frentes.`;
                 }
-                updatedCuerdas = updatedCuerdas.filter(c => !frontIdsToRemove.has(c.id));
+                confirmMessage += " ¿Desea continuar?";
+                
+                if (window.confirm(confirmMessage)) {
+                    setGallos(prev => prev.filter(g => !frontIdsToRemove.has(g.cuerdaId)));
+                    updatedCuerdas = updatedCuerdas.filter(c => !frontIdsToRemove.has(c.id));
+                } else {
+                    return; // User cancelled
+                }
             }
 
             // Update existing and add new fronts
@@ -226,19 +235,35 @@ const App: React.FC = () => {
         }
     }, [cuerdas, gallos, addNotification]);
     
-    const handleDeleteCuerda = useCallback((cuerdaId: string) => {
-        const cuerdaToDelete = cuerdas.find(c => c.id === cuerdaId);
+    const handleDeleteCuerda = useCallback((cuerdaIdToDelete: string) => {
+        const cuerdaToDelete = cuerdas.find(c => c.id === cuerdaIdToDelete);
         if (!cuerdaToDelete) return;
-
-        const baseCuerdaId = cuerdaToDelete.baseCuerdaId || cuerdaToDelete.id;
-        const relatedCuerdaIds = cuerdas.filter(c => c.id === baseCuerdaId || c.baseCuerdaId === baseCuerdaId).map(c => c.id);
-        
-        if (gallos.some(g => relatedCuerdaIds.includes(g.cuerdaId))) {
-            addNotification('No se puede eliminar una cuerda con gallos asignados.', 'error');
+    
+        // Find the base ID for the group this front belongs to.
+        const baseId = cuerdaToDelete.baseCuerdaId || cuerdaToDelete.id;
+    
+        // Check if we are trying to delete the base (F1) while other fronts (F2, F3...) still exist.
+        const isDeletingBase = cuerdaToDelete.id === baseId;
+        const hasOtherFronts = cuerdas.some(c => c.baseCuerdaId === baseId);
+    
+        if (isDeletingBase && hasOtherFronts) {
+            addNotification('No se puede eliminar el frente principal (F1) si existen otros frentes asociados. Elimine los frentes secundarios primero.', 'error', 5000);
             return;
         }
-        setCuerdas(prev => prev.filter(c => c.id !== baseCuerdaId && c.baseCuerdaId !== baseCuerdaId));
-        addNotification('Cuerda y todos sus frentes eliminados.', 'success');
+    
+        const associatedRoostersCount = gallos.filter(g => g.cuerdaId === cuerdaIdToDelete).length;
+        let confirmMessage = `¿Está seguro de que desea eliminar el frente "${cuerdaToDelete.name}"?`;
+        if (associatedRoostersCount > 0) {
+            confirmMessage += ` ${associatedRoostersCount} gallo(s) asignado(s) a él también será(n) eliminado(s).`;
+        }
+    
+        if (window.confirm(confirmMessage)) {
+            // Filter out roosters belonging to the deleted front
+            setGallos(prev => prev.filter(g => g.cuerdaId !== cuerdaIdToDelete));
+            // Filter out the front itself
+            setCuerdas(prev => prev.filter(c => c.id !== cuerdaIdToDelete));
+            addNotification('Frente y sus gallos han sido eliminados.', 'success');
+        }
     }, [cuerdas, gallos, addNotification]);
 
     const handleSaveGallo = useCallback((galloData: Omit<Gallo, 'id' | 'tipoEdad'>, currentGalloId: string) => {
