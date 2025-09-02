@@ -27,13 +27,21 @@ const formatWeightLbsOz = (totalOunces: number, withUnit = false): string => {
 };
 
 const parseWeightLbsOz = (value: string): number => {
-    const cleanValue = value.replace(/[^0-9.]/g, '');
+    let cleanValue = value.replace(/[^0-9.]/g, '');
+
+    // If it's a 3-digit number without a decimal, intelligently convert it.
+    // e.g., "512" becomes "5.12" to represent 5 lbs 12 oz.
+    if (!cleanValue.includes('.') && cleanValue.length === 3) {
+        cleanValue = `${cleanValue.substring(0, 1)}.${cleanValue.substring(1)}`;
+    }
+
     const parts = cleanValue.split('.');
     let lbs = parseInt(parts[0], 10) || 0;
     let oz_input = parts[1] || '0';
     // Ensure oz part is treated as an integer, not octal, and handle partial input like "3."
     let oz = parseInt(oz_input, 10) || 0;
 
+    // Handle ounce overflow, e.g., if user enters "4.20" it becomes "5.04"
     if (oz >= OUNCES_PER_POUND) {
         lbs += Math.floor(oz / OUNCES_PER_POUND);
         oz = oz % OUNCES_PER_POUND;
