@@ -1,11 +1,4 @@
 
-
-
-
-
-
-
-
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Cuerda, Gallo, Torneo, TipoGallo, TipoEdad } from '../types';
 import { TrashIcon, ChevronDownIcon, ChevronUpIcon, PencilIcon } from './Icons';
@@ -47,6 +40,13 @@ const parseWeightLbsOz = (value: string): number => {
     }
     
     return fromLbsOz(lbs, oz);
+};
+
+// Helper to get age description text
+const getAgeDisplayText = (marca: number, ageMonths: number): string => {
+    const options = AGE_OPTIONS_BY_MARCA[String(marca)] || [];
+    const option = options.find(opt => opt.ageMonths === ageMonths);
+    return option ? option.displayText : `${ageMonths} meses`;
 };
 
 
@@ -361,7 +361,9 @@ const GalloFormModal: React.FC<{
 
     const handleBulkSubmit = () => {
         const allGallos = Object.values(stagedGallos).flat();
-        onSaveBulk(allGallos);
+        if (allGallos.length > 0) {
+            onSaveBulk(allGallos);
+        }
         onClose();
     };
 
@@ -468,11 +470,12 @@ const GalloFormModal: React.FC<{
                         {/* Display existing gallos */}
                         {existingGallosForTab.map((g) => {
                             const tipoEdad = g.ageMonths < 12 ? TipoEdad.POLLO : TipoEdad.GALLO;
-                            const fullDescription = `${g.color}: A:${g.ringId} / Pm:${g.markingId} / Pc:${g.breederPlateId} / Marca:${g.marca} / ${tipoEdad} / ${g.tipoGallo} / ${formatWeightLbsOz(g.weight)} (Lb.Oz)`;
+                            const ageDisplayText = getAgeDisplayText(g.marca, g.ageMonths);
+                            const fullDescription = `${g.color}: A:${g.ringId} / Pm:${g.markingId} / Pc:${g.breederPlateId} / Marca:${g.marca} / ${ageDisplayText} / ${tipoEdad} / ${g.tipoGallo} / ${formatWeightLbsOz(g.weight)} (Lb.Oz)`;
                             return (
                                 <div key={g.id} className="flex items-center justify-between bg-gray-800/40 p-2 rounded-lg text-sm">
                                     <p className="text-white truncate flex-grow text-xs" title={fullDescription}>
-                                        <span className="font-bold text-amber-400">{g.color}</span>: A:{g.ringId} / Pm:{g.markingId} / Pc:{g.breederPlateId} / Marca:{g.marca} / {tipoEdad} / {g.tipoGallo} / {formatWeightLbsOz(g.weight)} (Lb.Oz)
+                                        <span className="font-bold text-amber-400">{g.color}</span>: A:{g.ringId} / Pm:{g.markingId} / Pc:{g.breederPlateId} / Marca:{g.marca} / {ageDisplayText} / {tipoEdad} / {g.tipoGallo} / {formatWeightLbsOz(g.weight)} (Lb.Oz)
                                     </p>
                                     <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
                                         <button onClick={() => handleEditExistingClick(g)} className="p-1 text-gray-400 hover:text-amber-400 transition-colors"><PencilIcon className="w-4 h-4"/></button>
@@ -485,11 +488,12 @@ const GalloFormModal: React.FC<{
                         {/* Display staged gallos */}
                         {stagedGallosForTab.map((g, index) => {
                             const tipoEdad = g.ageMonths < 12 ? TipoEdad.POLLO : TipoEdad.GALLO;
-                            const fullDescription = `${g.color}: A:${g.ringId} / Pm:${g.markingId} / Pc:${g.breederPlateId} / Marca:${g.marca} / ${tipoEdad} / ${g.tipoGallo} / ${formatWeightLbsOz(g.weight)} (Lb.Oz)`;
+                            const ageDisplayText = getAgeDisplayText(g.marca, g.ageMonths);
+                            const fullDescription = `${g.color}: A:${g.ringId} / Pm:${g.markingId} / Pc:${g.breederPlateId} / Marca:${g.marca} / ${ageDisplayText} / ${tipoEdad} / ${g.tipoGallo} / ${formatWeightLbsOz(g.weight)} (Lb.Oz)`;
                             return (
                                 <div key={index} className="flex items-center justify-between bg-gray-700/50 p-2 rounded-lg text-sm">
                                     <p className="text-white truncate flex-grow text-xs" title={fullDescription}>
-                                        <span className="font-bold text-amber-400">{g.color}</span>: A:{g.ringId} / Pm:{g.markingId} / Pc:{g.breederPlateId} / Marca:{g.marca} / {tipoEdad} / {g.tipoGallo} / {formatWeightLbsOz(g.weight)} (Lb.Oz)
+                                        <span className="font-bold text-amber-400">{g.color}</span>: A:{g.ringId} / Pm:{g.markingId} / Pc:{g.breederPlateId} / Marca:{g.marca} / {ageDisplayText} / {tipoEdad} / {g.tipoGallo} / {formatWeightLbsOz(g.weight)} (Lb.Oz)
                                     </p>
                                     <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
                                         <button onClick={() => handleEditStagedClick(index)} className="p-1 text-gray-400 hover:text-amber-400"><PencilIcon className="w-4 h-4"/></button>
@@ -554,7 +558,7 @@ const GalloFormModal: React.FC<{
                 
                 <div className="flex justify-end pt-4 space-x-3 border-t border-gray-700 mt-4">
                     <button type="button" onClick={onClose} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Cancelar</button>
-                    <button type="button" onClick={handleBulkSubmit} disabled={!hasStagedGallos} className="bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-2 px-4 rounded-lg disabled:bg-gray-400 disabled:text-gray-700 disabled:cursor-not-allowed">
+                    <button type="button" onClick={handleBulkSubmit} className="bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-2 px-4 rounded-lg disabled:bg-gray-400 disabled:text-gray-700 disabled:cursor-not-allowed">
                         Guardar Todo y Cerrar
                     </button>
                 </div>
