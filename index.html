@@ -18,6 +18,28 @@
           radial-gradient(at 47% 33%, hsl(200.00, 0%, 14%) 0, transparent 59%),
           radial-gradient(at 82% 65%, hsl(215.00, 19%, 17%) 0, transparent 55%);
       }
+
+      /* Custom Scrollbar Styles */
+      .custom-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: #4b5563 #1f2937; /* thumb track for Firefox */
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 8px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background-color: #1f2937; /* Tailwind gray-800 */
+        border-radius: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background-color: #4b5563; /* Tailwind gray-600 */
+        border-radius: 4px;
+        border: 2px solid #1f2937; /* Creates padding around thumb */
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background-color: #6b7280; /* Tailwind gray-500 */
+      }
+
       .printable-planilla-container {
         display: none;
       }

@@ -4,6 +4,8 @@
 
 
 
+
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Cuerda, Gallo, Torneo, TipoGallo, TipoEdad } from '../types';
 import { TrashIcon, ChevronDownIcon, ChevronUpIcon, PencilIcon } from './Icons';
@@ -459,7 +461,7 @@ const GalloFormModal: React.FC<{
         return (
             <div onKeyDown={handleFormKeyDown}>
                 <fieldset disabled={!isCuerdaSelected} className="disabled:opacity-40 transition-opacity">
-                     <div className="space-y-2 max-h-48 overflow-y-auto pr-2 mb-4">
+                     <div className="space-y-2 max-h-24 overflow-y-auto pr-2 mb-4 custom-scrollbar">
                         {isCuerdaSelected && !hasAnyGallos && <p className="text-gray-500 text-center text-sm py-2">Aún no hay gallos para este frente.</p>}
                         {!isCuerdaSelected && <p className="text-gray-500 text-center text-sm py-8">Seleccione una cuerda para añadir gallos.</p>}
 
@@ -487,7 +489,7 @@ const GalloFormModal: React.FC<{
                             return (
                                 <div key={index} className="flex items-center justify-between bg-gray-700/50 p-2 rounded-lg text-sm">
                                     <p className="text-white truncate flex-grow text-xs" title={fullDescription}>
-                                        <span className="font-bold text-amber-400">{g.color}</span>: A:{g.ringId} / Pm:{g.markingId} / Pc:${g.breederPlateId} / Marca:${g.marca} / ${tipoEdad} / ${g.tipoGallo} / ${formatWeightLbsOz(g.weight)} (Lb.Oz)
+                                        <span className="font-bold text-amber-400">{g.color}</span>: A:{g.ringId} / Pm:{g.markingId} / Pc:{g.breederPlateId} / Marca:{g.marca} / {tipoEdad} / {g.tipoGallo} / {formatWeightLbsOz(g.weight)} (Lb.Oz)
                                     </p>
                                     <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
                                         <button onClick={() => handleEditStagedClick(index)} className="p-1 text-gray-400 hover:text-amber-400"><PencilIcon className="w-4 h-4"/></button>
