@@ -7,7 +7,6 @@ import MatchmakingScreen from './components/MatchmakingScreen';
 import LiveFightScreen from './components/LiveFightScreen';
 import ResultsScreen from './components/ResultsScreen';
 import TournamentResultsScreen from './components/TournamentResultsScreen';
-import { processPreloadedData } from './demo-data';
 import Toaster from './components/Toaster';
 
 // --- TYPE DEFINITIONS ---
@@ -157,11 +156,6 @@ const App: React.FC = () => {
                 setDailyResults(savedDailyResults ? JSON.parse(savedDailyResults) : []);
                 setCurrentDay(loadedCurrentDay);
                 setViewingDay(loadedCurrentDay);
-            } else {
-                const { torneo: preloadedTorneo, cuerdas: preloadedCuerdas, gallosByDay: preloadedGallosByDay } = processPreloadedData();
-                setTorneo(preloadedTorneo);
-                setCuerdas(preloadedCuerdas);
-                setGallosByDay(preloadedGallosByDay);
             }
         } catch (error) {
             console.error("Failed to load data from localStorage", error);
