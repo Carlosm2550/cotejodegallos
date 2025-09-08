@@ -155,9 +155,6 @@ const TournamentResultsScreen: React.FC<TournamentResultsScreenProps> = ({ daily
                         Imprimir Resultados Finales
                     </button>
                 </div>
-                 <p className="text-xs text-gray-400 mb-4 print-hide">
-                    Haz clic en una fila para ver los detalles de las peleas. Todos los detalles se incluirán al imprimir.
-                </p>
                  <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left text-gray-300">
                          <thead className="text-xs text-amber-400 uppercase bg-gray-700/50">

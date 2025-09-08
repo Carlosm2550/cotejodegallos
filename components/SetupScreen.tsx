@@ -524,6 +524,11 @@ const SetupScreen: React.FC<SetupScreenProps> = ({
     const [currentCuerda, setCurrentCuerda] = useState<Cuerda | null>(null);
     const [currentGallo, setCurrentGallo] = useState<Gallo | null>(null);
 
+    const handleOpenAddCuerdaModal = () => {
+        setCurrentCuerda(null);
+        setCuerdaModalOpen(true);
+    };
+
     const handleSaveCuerdaClick = (data: CuerdaFormData, currentCuerdaId: string | null) => {
         onSaveCuerda(data, currentCuerdaId);
         setCuerdaModalOpen(false);
@@ -581,15 +586,27 @@ const SetupScreen: React.FC<SetupScreenProps> = ({
     const isCurrentDayFinished = dailyResults.some(r => r.day === currentDay);
     const isTournamentFinished = dailyResults.length >= torneo.tournamentDays;
 
+    const setupTitle = useMemo(() => {
+        return torneo.tournamentDays === 1
+            ? "Configuración para Torneo de un solo día"
+            : `Configuración para el Día ${viewingDay} de ${torneo.tournamentDays}`;
+    }, [torneo.tournamentDays, viewingDay]);
+
+    const setupSubtitle = useMemo(() => {
+        if (torneo.tournamentDays === 1) {
+            return `Ajusta las reglas, añade cuerdas y registra los gallos para la contienda.`;
+        }
+        return isReadOnly 
+            ? `Viendo la configuración del Día ${viewingDay} (finalizado).`
+            : `Ajusta las reglas, añade cuerdas y registra los gallos para la contienda de hoy.`;
+    }, [torneo.tournamentDays, viewingDay, isReadOnly]);
+
     return (
         <div className="space-y-6">
             <div className="text-center mb-4">
-                <h2 className="text-2xl font-bold text-white">Configuración para el Día {viewingDay} de {torneo.tournamentDays}</h2>
+                <h2 className="text-2xl font-bold text-white">{setupTitle}</h2>
                 <p className="text-gray-400 mt-1">
-                    {isReadOnly 
-                        ? `Viendo la configuración del Día ${viewingDay} (finalizado).`
-                        : `Ajusta las reglas, añade cuerdas y registra los gallos para la contienda de hoy.`
-                    }
+                   {setupSubtitle}
                 </p>
             </div>
             
@@ -630,7 +647,7 @@ const SetupScreen: React.FC<SetupScreenProps> = ({
                             icon={<UsersIcon />} 
                             title="Cuerdas" 
                             buttonText="Añadir Cuerda" 
-                            onButtonClick={handleOpenAddGalloModal}
+                            onButtonClick={handleOpenAddCuerdaModal}
                             isReadOnly={isReadOnly}
                         >
                             <div className="space-y-2 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
