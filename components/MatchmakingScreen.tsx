@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { MatchmakingResults, Torneo, Cuerda, Pelea, Gallo } from '../types';
-import GalloFormModal from './GalloFormModal';
 import { PencilIcon } from './Icons';
 
 // --- Lbs.Oz Weight Conversion Utilities ---
@@ -30,22 +29,18 @@ interface MatchmakingScreenProps {
     onStartTournament: () => void;
     onBack: () => void;
     onCreateManualFight: (roosterAId: string, roosterBId: string) => void;
-    onUpdateGallo: (galloData: Omit<Gallo, 'id' | 'tipoEdad'>, currentGalloId: string) => void;
-    isTournamentInProgress: boolean;
-    isTournamentFinished: boolean;
-    onResumeTournament: () => void;
-    onGoToResults: () => void;
+    isReadOnly: boolean;
 }
 
-const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, cuerdas, gallos, onStartTournament, onBack, onCreateManualFight, onUpdateGallo, isTournamentInProgress, isTournamentFinished, onResumeTournament, onGoToResults }) => {
+const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, cuerdas, onStartTournament, onBack, onCreateManualFight, isReadOnly }) => {
     
     const [selectedRoosters, setSelectedRoosters] = useState<string[]>([]);
-    const [isEditModalOpen, setEditModalOpen] = useState(false);
-    const [editingGallo, setEditingGallo] = useState<Gallo | null>(null);
     
     const getCuerdaName = (id: string) => cuerdas.find(p => p.id === id)?.name || 'Desconocido';
 
     const handleSelectRooster = (roosterId: string) => {
+        if (isReadOnly) return;
+
         setSelectedRoosters(prev => {
             if (prev.includes(roosterId)) {
                 return prev.filter(id => id !== roosterId);
@@ -62,16 +57,6 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
             onCreateManualFight(selectedRoosters[0], selectedRoosters[1]);
             setSelectedRoosters([]);
         }
-    };
-    
-    const handleOpenEditModal = (gallo: Gallo) => {
-        setEditingGallo(gallo);
-        setEditModalOpen(true);
-    };
-
-    const handleUpdateGalloClick = (galloData: Omit<Gallo, 'id' | 'tipoEdad'>, currentGalloId: string) => {
-        onUpdateGallo(galloData, currentGalloId);
-        setEditModalOpen(false); // Close modal on save
     };
     
     const handlePrint = () => {
@@ -152,7 +137,7 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
                 )}
             </div>
 
-            {totalRoostersForIndividualRound > 0 && (
+            {!isReadOnly && totalRoostersForIndividualRound > 0 && (
                 <div className="bg-gray-800/50 rounded-2xl shadow-lg border border-gray-700 p-4 mt-8">
                     <h3 className="text-xl font-bold text-amber-400 mb-4">Contiendas Manuales</h3>
 
@@ -207,16 +192,6 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
                                                     <p className="font-mono text-sm">{formatWeightLbsOz(gallo.weight)}</p>
                                                     <p className="font-mono text-xs text-gray-400">{gallo.ageMonths}m / {gallo.tipoGallo}</p>
                                                 </div>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleOpenEditModal(gallo);
-                                                    }}
-                                                    className="text-gray-400 hover:text-amber-400 transition-colors p-1 ml-1"
-                                                    aria-label={`Editar ${gallo.color}`}
-                                                >
-                                                    <PencilIcon className="w-5 h-5"/>
-                                                </button>
                                             </div>
                                         </div>
                                     );
@@ -245,37 +220,13 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ results, torneo, 
                      <button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg mr-4">
                         Imprimir PDF
                     </button>
-                    {isTournamentFinished ? (
-                        <button onClick={onGoToResults} className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-8 rounded-lg text-lg">
-                            Clasificación General
-                        </button>
-                    ) : isTournamentInProgress ? (
-                        <button onClick={onResumeTournament} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg">
-                            Volver a la Contienda
-                        </button>
-                    ) : (
+                    {!isReadOnly && (
                         <button onClick={onStartTournament} className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg text-lg">
                             Comenzar Torneo
                         </button>
                     )}
                 </div>
             </div>
-            
-            {isEditModalOpen && editingGallo && (
-                <GalloFormModal 
-                    isOpen={isEditModalOpen}
-                    onClose={() => setEditModalOpen(false)}
-                    onSaveSingle={handleUpdateGalloClick}
-                    onSaveBulk={() => {}} // Not used in this context
-                    gallo={editingGallo}
-                    cuerdas={cuerdas}
-                    gallos={gallos}
-                    torneo={torneo}
-                    // Fix: Provide dummy functions for props required by the component but not used in single-edit mode.
-                    onDeleteGallo={() => {}}
-                    onEditGallo={() => {}}
-                />
-            )}
         </div>
     );
 };

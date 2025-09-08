@@ -1,5 +1,6 @@
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { Cuerda, Gallo, Torneo, TipoGallo, TipoEdad } from '../types';
 import { TrashIcon, ChevronDownIcon, ChevronUpIcon, PencilIcon } from './Icons';
 import Modal from './Modal';
@@ -66,16 +67,54 @@ interface LbsOzInputProps {
   onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   disabled?: boolean;
   validator?: (value: number) => boolean; // Optional validator function
+  showGrid?: boolean;
+  minWeight?: number; // Total ounces for grid filtering
+  maxWeight?: number; // Total ounces for grid filtering
 }
-export const LbsOzInput: React.FC<LbsOzInputProps> = ({ label, value, onChange, onBlur, disabled = false, validator }) => {
+export const LbsOzInput: React.FC<LbsOzInputProps> = ({ label, value, onChange, onBlur, disabled = false, validator, showGrid = true, minWeight, maxWeight }) => {
     const [displayValue, setDisplayValue] = useState(formatWeightLbsOz(value));
     const [isValid, setIsValid] = useState(true);
+    const [isGridOpen, setIsGridOpen] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    const weightOptions = useMemo(() => {
+        const allPossibleWeights = [];
+        // Generate a wide range of weights, one ounce at a time
+        const startOunces = fromLbsOz(2, 0);
+        const endOunces = fromLbsOz(6, 0);
+        for (let oz = startOunces; oz <= endOunces; oz++) {
+            allPossibleWeights.push(oz);
+        }
+
+        if (minWeight !== undefined && maxWeight !== undefined && minWeight > 0 && maxWeight > 0) {
+            // Filter the generated list based on the tournament rules
+            return allPossibleWeights.filter(w => w >= minWeight && w <= maxWeight);
+        }
+        
+        // Fallback to the original hardcoded list if no range is provided
+        const defaultOptions = [];
+        for (let oz = 10; oz <= 15; oz++) defaultOptions.push(fromLbsOz(2, oz));
+        for (let lbs = 3; lbs <= 4; lbs++) {
+            for (let oz = 0; oz <= 15; oz++) defaultOptions.push(fromLbsOz(lbs, oz));
+        }
+        defaultOptions.push(fromLbsOz(5, 0));
+        return defaultOptions;
+    }, [minWeight, maxWeight]);
 
     useEffect(() => {
-        // When the external value changes, reformat it and update validity.
         setDisplayValue(formatWeightLbsOz(value));
         setIsValid(validator ? validator(value) : true);
     }, [value, validator]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                setIsGridOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setDisplayValue(e.target.value);
@@ -84,16 +123,14 @@ export const LbsOzInput: React.FC<LbsOzInputProps> = ({ label, value, onChange, 
     const handleBlurInternal = (e: React.FocusEvent<HTMLInputElement>) => {
         const totalOunces = parseWeightLbsOz(displayValue);
         const currentValidity = validator ? validator(totalOunces) : true;
-        
         setIsValid(currentValidity);
-        onChange(totalOunces); // Always update with the corrected/parsed value.
-        
+        onChange(totalOunces);
         if (onBlur) onBlur(e);
     };
 
-    const handleStep = (amount: number) => {
-        const newValue = Math.max(0, value + amount);
-        onChange(newValue);
+    const handleWeightSelection = (weightInOunces: number) => {
+        onChange(weightInOunces);
+        setIsGridOpen(false);
     };
     
     const inputId = `input-${label.replace(/\s+/g, '-')}`;
@@ -102,7 +139,7 @@ export const LbsOzInput: React.FC<LbsOzInputProps> = ({ label, value, onChange, 
         : 'border-gray-600 focus:ring-amber-500 focus:border-amber-500';
 
     return (
-        <div>
+        <div ref={containerRef} className="relative">
             <label htmlFor={inputId} className="block text-sm font-medium text-gray-400 mb-1">{label}</label>
             <div className="relative flex items-center">
                 <input
@@ -110,16 +147,43 @@ export const LbsOzInput: React.FC<LbsOzInputProps> = ({ label, value, onChange, 
                     type="text"
                     value={displayValue}
                     onChange={handleInputChange}
+                    onFocus={showGrid ? () => setIsGridOpen(true) : undefined}
                     onBlur={handleBlurInternal}
                     disabled={disabled}
-                    className={`w-full bg-gray-700 border text-white rounded-lg px-10 py-2 focus:ring-2 outline-none transition text-center font-mono disabled:bg-gray-800 disabled:opacity-70 disabled:cursor-not-allowed ${validityClasses}`}
+                    className={`w-full bg-gray-700 border text-white rounded-lg px-3 py-2 focus:ring-2 outline-none transition text-center font-mono disabled:bg-gray-800 disabled:opacity-70 disabled:cursor-not-allowed ${validityClasses}`}
                     inputMode="decimal"
                 />
-                <div className="absolute right-2 flex flex-col space-y-1">
-                    <button type="button" onClick={() => handleStep(1)} disabled={disabled} className="text-gray-400 hover:text-white h-4 flex items-center justify-center rounded-sm bg-gray-600/50 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"><ChevronUpIcon className="w-4 h-4"/></button>
-                    <button type="button" onClick={() => handleStep(-1)} disabled={disabled} className="text-gray-400 hover:text-white h-4 flex items-center justify-center rounded-sm bg-gray-600/50 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"><ChevronDownIcon className="w-4 h-4"/></button>
-                </div>
+                {showGrid && (
+                  <div className="absolute right-0 flex items-center h-full">
+                      <button
+                          type="button"
+                          onClick={() => setIsGridOpen(!isGridOpen)}
+                          disabled={disabled}
+                          className="text-gray-400 hover:text-white h-full px-2 flex items-center justify-center rounded-r-lg bg-gray-700 border-l border-gray-600 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                          aria-expanded={isGridOpen}
+                          aria-controls="weight-grid"
+                      >
+                          <ChevronDownIcon className={`w-5 h-5 transition-transform ${isGridOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                  </div>
+                )}
             </div>
+            {showGrid && isGridOpen && !disabled && (
+                <div id="weight-grid" className="absolute top-full mt-2 w-full bg-gray-800 border border-gray-600 rounded-lg shadow-xl z-10 p-2 max-h-60 overflow-y-auto custom-scrollbar">
+                    <div className="grid grid-cols-5 gap-1">
+                        {weightOptions.map(weightInOunces => (
+                            <button
+                                key={weightInOunces}
+                                type="button"
+                                className="text-center font-mono py-2 rounded-md bg-gray-700 hover:bg-amber-600 hover:text-gray-900 transition-colors text-sm"
+                                onClick={() => handleWeightSelection(weightInOunces)}
+                            >
+                                {formatWeightLbsOz(weightInOunces)}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -163,14 +227,14 @@ const GalloFormModal: React.FC<{
     isOpen: boolean; 
     onClose: () => void; 
     onSaveSingle: (gallo: Omit<Gallo, 'id' | 'tipoEdad'>, currentGalloId: string) => void; 
-    onSaveBulk: (gallos: Omit<Gallo, 'id' | 'tipoEdad'>[]) => void;
+    onAddSingleGallo: (gallo: Omit<Gallo, 'id' | 'tipoEdad'>) => void;
     gallo: Gallo | null;
     cuerdas: Cuerda[];
     gallos: Gallo[];
     torneo: Torneo;
     onDeleteGallo: (galloId: string) => void;
     onEditGallo: (gallo: Gallo) => void;
-}> = ({ isOpen, onClose, onSaveSingle, onSaveBulk, gallo, cuerdas, gallos, torneo, onDeleteGallo }) => {
+}> = ({ isOpen, onClose, onSaveSingle, onAddSingleGallo, gallo, cuerdas, gallos, torneo, onDeleteGallo }) => {
     
     // --- State for Single Edit Mode ---
     const [singleForm, setSingleForm] = useState<Omit<Gallo, 'id' | 'tipoEdad'>>({} as any);
@@ -178,9 +242,8 @@ const GalloFormModal: React.FC<{
     // --- State for Bulk Add Mode ---
     const [selectedCuerdaId, setSelectedCuerdaId] = useState('');
     const [activeTabCuerdaId, setActiveTabCuerdaId] = useState('');
-    const [stagedGallos, setStagedGallos] = useState<Record<string, Omit<Gallo, 'id' | 'tipoEdad'>[]>>({});
-    const [editingStagedIndex, setEditingStagedIndex] = useState<number | null>(null);
     const [editingExistingGallo, setEditingExistingGallo] = useState<Gallo | null>(null);
+    const [isRingIdFocused, setIsRingIdFocused] = useState(false);
 
     const initialGalloFormState: GalloBulkFormData = {
         ringId: '', color: '', cuerdaId: '', weight: 0, ageMonths: '', markingId: '', breederPlateId: '', tipoGallo: TipoGallo.LISO, marca: '',
@@ -197,6 +260,19 @@ const GalloFormModal: React.FC<{
             grouped.set(gallo.cuerdaId, list);
         });
         return grouped;
+    }, [gallos]);
+    
+    const lastRingId = useMemo(() => {
+        if (gallos && gallos.length > 0) {
+            // The gallo ID contains a timestamp. Let's use that to find the most recent one.
+            const sortedGallos = [...gallos].sort((a, b) => {
+                const timeA = parseInt(a.id.split('-')[1], 10) || 0;
+                const timeB = parseInt(b.id.split('-')[1], 10) || 0;
+                return timeB - timeA; // Sort descending by time
+            });
+            return sortedGallos[0].ringId;
+        }
+        return null;
     }, [gallos]);
 
     const handleFormKeyDown = (e: React.KeyboardEvent) => {
@@ -217,9 +293,7 @@ const GalloFormModal: React.FC<{
             } else { // Bulk Add Mode Reset
                 setSelectedCuerdaId('');
                 setActiveTabCuerdaId('');
-                setStagedGallos({});
                 setCurrentGalloForm(initialGalloFormState);
-                setEditingStagedIndex(null);
                 setEditingExistingGallo(null);
             }
         }
@@ -228,6 +302,12 @@ const GalloFormModal: React.FC<{
     const handleSingleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!singleForm.cuerdaId || !gallo) return;
+
+        const isRingIdUnique = !gallos.some(g => g.ringId.trim().toLowerCase() === singleForm.ringId.trim().toLowerCase() && g.id !== gallo.id);
+        if (!isRingIdUnique) {
+            alert(`El ID del Anillo "${singleForm.ringId}" ya existe. Por favor, use uno diferente.`);
+            return;
+        }
 
         if (!singleForm.marca || !singleForm.ageMonths) {
             alert("Debe seleccionar una Marca y una Edad para el gallo.");
@@ -253,16 +333,13 @@ const GalloFormModal: React.FC<{
 
         setSelectedCuerdaId(baseCuerdaId);
         setActiveTabCuerdaId(firstFront?.id || '');
-        setStagedGallos({});
         setCurrentGalloForm({ ...initialGalloFormState, cuerdaId: firstFront?.id || '' });
-        setEditingStagedIndex(null);
         setEditingExistingGallo(null);
     };
 
     const handleTabClick = (cuerdaId: string) => {
         setActiveTabCuerdaId(cuerdaId);
         setCurrentGalloForm({ ...initialGalloFormState, cuerdaId });
-        setEditingStagedIndex(null);
         setEditingExistingGallo(null);
     };
 
@@ -281,14 +358,19 @@ const GalloFormModal: React.FC<{
     };
     
     const handleBulkFormSubmit = () => {
-        const isEditingStaged = editingStagedIndex !== null;
         const isEditingExisting = editingExistingGallo !== null;
-        const isAdding = !isEditingStaged && !isEditingExisting;
+        const isAdding = !isEditingExisting;
+
+        const currentId = isEditingExisting ? editingExistingGallo.id : null;
+        const isRingIdUnique = !gallos.some(g => g.ringId.trim().toLowerCase() === currentGalloForm.ringId.trim().toLowerCase() && g.id !== currentId);
+        if (!isRingIdUnique) {
+            alert(`El ID del Anillo "${currentGalloForm.ringId}" ya existe. Por favor, use uno diferente.`);
+            return;
+        }
 
         if (isAdding) {
             const existingCount = gallosByCuerda.get(activeTabCuerdaId)?.length || 0;
-            const stagedCount = (stagedGallos[activeTabCuerdaId] || []).length;
-            const totalCount = existingCount + stagedCount;
+            const totalCount = existingCount;
             const limit = torneo.roostersPerTeam;
 
             if (limit > 0 && totalCount >= limit) {
@@ -316,25 +398,11 @@ const GalloFormModal: React.FC<{
         if (isEditingExisting) {
             onSaveSingle(newGalloData, editingExistingGallo.id);
             setEditingExistingGallo(null);
-        } else if (isEditingStaged) {
-            const updatedStaged = [...(stagedGallos[activeTabCuerdaId] || [])];
-            updatedStaged[editingStagedIndex] = newGalloData;
-            setStagedGallos(prev => ({ ...prev, [activeTabCuerdaId]: updatedStaged }));
-            setEditingStagedIndex(null);
         } else {
-            setStagedGallos(prev => ({ ...prev, [activeTabCuerdaId]: [...(prev[activeTabCuerdaId] || []), newGalloData] }));
+            onAddSingleGallo(newGalloData);
         }
         
         setCurrentGalloForm({ ...initialGalloFormState, cuerdaId: activeTabCuerdaId });
-    };
-
-    const handleEditStagedClick = (index: number) => {
-        const roosterToEdit = stagedGallos[activeTabCuerdaId][index];
-        setCurrentGalloForm({
-            ...roosterToEdit, ageMonths: String(roosterToEdit.ageMonths), marca: String(roosterToEdit.marca),
-        });
-        setEditingStagedIndex(index);
-        setEditingExistingGallo(null);
     };
 
     const handleEditExistingClick = (galloToEdit: Gallo) => {
@@ -345,7 +413,6 @@ const GalloFormModal: React.FC<{
             ageMonths: String(galloToEdit.ageMonths),
             marca: String(galloToEdit.marca),
         });
-        setEditingStagedIndex(null);
     };
     
     const handleDeleteExistingGallo = (gallo: Gallo) => {
@@ -355,24 +422,8 @@ const GalloFormModal: React.FC<{
     };
 
     const handleCancelEdit = () => {
-        setEditingStagedIndex(null);
         setEditingExistingGallo(null);
         setCurrentGalloForm({ ...initialGalloFormState, cuerdaId: activeTabCuerdaId });
-    };
-
-    const handleDeleteStagedGallo = (indexToDelete: number) => {
-        setStagedGallos(prev => ({
-            ...prev,
-            [activeTabCuerdaId]: (prev[activeTabCuerdaId] || []).filter((_, index) => index !== indexToDelete)
-        }));
-    };
-
-    const handleBulkSubmit = () => {
-        const allGallos = Object.values(stagedGallos).flat();
-        if (allGallos.length > 0) {
-            onSaveBulk(allGallos);
-        }
-        onClose();
     };
 
     const groupedBaseCuerdas = useMemo(() => {
@@ -406,13 +457,29 @@ const GalloFormModal: React.FC<{
             <form onSubmit={handleSingleSubmit} onKeyDown={handleFormKeyDown} className="space-y-4">
                 <h4 className="text-lg font-semibold text-amber-300 mb-2">Cuerda: {cuerdas.find(c => c.id === singleForm.cuerdaId)?.name || ''}</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <InputField label="ID del Anillo (A)" value={singleForm.ringId || ''} onChange={e => setSingleForm(p => ({...p, ringId: e.target.value}))} required />
+                    <div className="relative">
+                        <InputField 
+                          label="ID del Anillo (A)" 
+                          value={singleForm.ringId || ''} 
+                          onChange={e => setSingleForm(p => ({...p, ringId: e.target.value}))} 
+                          required 
+                          onFocus={() => setIsRingIdFocused(true)}
+                          onBlur={() => setIsRingIdFocused(false)}
+                          autoComplete="off"
+                        />
+                        {isRingIdFocused && lastRingId && (
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max bg-white text-gray-800 text-sm font-semibold px-3 py-1 rounded-md shadow-lg z-20">
+                                Anterior: {lastRingId}
+                                <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-8 border-x-transparent border-t-8 border-t-white"></div>
+                            </div>
+                        )}
+                    </div>
                     <InputField label="Número de Placa Marcaje (Pm)" value={singleForm.markingId || ''} onChange={e => setSingleForm(p => ({...p, markingId: e.target.value}))} required />
                     <InputField label="Placa del Criadero (Pc)" value={singleForm.breederPlateId === 'N/A' ? '' : singleForm.breederPlateId || ''} onChange={e => setSingleForm(p => ({...p, breederPlateId: e.target.value}))} placeholder="N/A si se deja vacío" />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <InputField label="Color del Gallo" value={singleForm.color || ''} onChange={e => setSingleForm(p => ({...p, color: e.target.value}))} required />
-                    <LbsOzInput label="Peso (Lb.Oz)" value={singleForm.weight || 0} onChange={v => setSingleForm(p => ({...p, weight: v}))} validator={isWeightInTournamentRange} />
+                    <LbsOzInput label="Peso (Lb.Oz)" value={singleForm.weight || 0} onChange={v => setSingleForm(p => ({...p, weight: v}))} validator={isWeightInTournamentRange} minWeight={torneo.minWeight} maxWeight={torneo.maxWeight} />
                     <div>
                         <label className="block text-sm font-medium text-gray-400 mb-1">Marca</label>
                         <select value={singleForm.marca || ''} onChange={e => {
@@ -453,20 +520,16 @@ const GalloFormModal: React.FC<{
         const isCuerdaSelected = !!selectedCuerdaId;
         const ageOptionsForBulk = AGE_OPTIONS_BY_MARCA[currentGalloForm.marca] || [];
         const existingCount = gallosByCuerda.get(activeTabCuerdaId)?.length || 0;
-        const stagedCount = (stagedGallos[activeTabCuerdaId] || []).length;
         
-        const isEditingStaged = editingStagedIndex !== null;
         const isEditingExisting = editingExistingGallo !== null;
-        const isEditing = isEditingStaged || isEditingExisting;
+        const isEditing = isEditingExisting;
 
-        const isLimitReached = torneo.roostersPerTeam > 0 && (existingCount + stagedCount) >= torneo.roostersPerTeam;
+        const isLimitReached = torneo.roostersPerTeam > 0 && existingCount >= torneo.roostersPerTeam;
         const isAddButtonDisabled = (isLimitReached && !isEditing) || !currentGalloForm.ringId || !currentGalloForm.color || currentGalloForm.weight === 0 || !selectedCuerdaId;
         const addButtonText = isLimitReached && !isEditing ? 'Límite de gallos alcanzado' : isEditing ? 'Guardar Cambios' : 'Añadir Gallo a este Frente';
-        const hasStagedGallos = Object.values(stagedGallos).some(arr => arr.length > 0);
 
         const existingGallosForTab = gallosByCuerda.get(activeTabCuerdaId) || [];
-        const stagedGallosForTab = stagedGallos[activeTabCuerdaId] || [];
-        const hasAnyGallos = existingGallosForTab.length > 0 || stagedGallosForTab.length > 0;
+        const hasAnyGallos = existingGallosForTab.length > 0;
 
         return (
             <div onKeyDown={handleFormKeyDown}>
@@ -492,35 +555,34 @@ const GalloFormModal: React.FC<{
                                 </div>
                             );
                         })}
-
-                        {/* Display staged gallos */}
-                        {stagedGallosForTab.map((g, index) => {
-                            const tipoEdad = g.ageMonths < 12 ? TipoEdad.POLLO : TipoEdad.GALLO;
-                            const ageDisplayText = getAgeDisplayText(g.marca, g.ageMonths);
-                            const fullDescription = `${g.color}: A:${g.ringId} / Pm:${g.markingId} / Pc:${g.breederPlateId} / Marca:${g.marca} / ${ageDisplayText} / ${tipoEdad} / ${g.tipoGallo} / ${formatWeightLbsOz(g.weight)} (Lb.Oz)`;
-                            return (
-                                <div key={index} className="flex items-center justify-between bg-gray-700/50 p-2 rounded-lg text-sm">
-                                    <p className="text-white truncate flex-grow text-xs" title={fullDescription}>
-                                        <span className="font-bold text-amber-400">{g.color}</span>: A:{g.ringId} / Pm:{g.markingId} / Pc:{g.breederPlateId} / Marca:{g.marca} / {ageDisplayText} / {tipoEdad} / {g.tipoGallo} / {formatWeightLbsOz(g.weight)} (Lb.Oz)
-                                    </p>
-                                    <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
-                                        <button onClick={() => handleEditStagedClick(index)} className="p-1 text-gray-400 hover:text-amber-400"><PencilIcon className="w-4 h-4"/></button>
-                                        <button onClick={() => handleDeleteStagedGallo(index)} className="p-1 text-gray-400 hover:text-red-500"><TrashIcon className="w-4 h-4"/></button>
-                                    </div>
-                                </div>
-                            )
-                        })}
                     </div>
 
                     <div className="p-4 bg-gray-900/50 rounded-lg space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <InputField label="ID del Anillo (A)" value={currentGalloForm.ringId} onChange={e => handleBulkFormChange('ringId', e.target.value)} required disabled={(isLimitReached && !isEditing)}/>
+                            <div className="relative">
+                                <InputField 
+                                    label="ID del Anillo (A)" 
+                                    value={currentGalloForm.ringId} 
+                                    onChange={e => handleBulkFormChange('ringId', e.target.value)} 
+                                    required 
+                                    disabled={(isLimitReached && !isEditing)}
+                                    onFocus={() => setIsRingIdFocused(true)}
+                                    onBlur={() => setIsRingIdFocused(false)}
+                                    autoComplete="off"
+                                />
+                                {isRingIdFocused && lastRingId && (
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max bg-white text-gray-800 text-sm font-semibold px-3 py-1 rounded-md shadow-lg z-20">
+                                        Anterior: {lastRingId}
+                                        <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-8 border-x-transparent border-t-8 border-t-white"></div>
+                                    </div>
+                                )}
+                            </div>
                             <InputField label="Número de Placa Marcaje (Pm)" value={currentGalloForm.markingId} onChange={e => handleBulkFormChange('markingId', e.target.value)} required disabled={(isLimitReached && !isEditing)}/>
                             <InputField label="Placa del Criadero (Pc)" value={currentGalloForm.breederPlateId} onChange={e => handleBulkFormChange('breederPlateId', e.target.value)} placeholder="N/A si se deja vacío" disabled={(isLimitReached && !isEditing)}/>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <InputField label="Color del Gallo" value={currentGalloForm.color} onChange={e => handleBulkFormChange('color', e.target.value)} required disabled={(isLimitReached && !isEditing)}/>
-                            <LbsOzInput label="Peso (Lb.Oz)" value={currentGalloForm.weight} onChange={v => handleBulkFormChange('weight', v)} disabled={(isLimitReached && !isEditing)} validator={isWeightInTournamentRange} />
+                            <LbsOzInput label="Peso (Lb.Oz)" value={currentGalloForm.weight} onChange={v => handleBulkFormChange('weight', v)} disabled={(isLimitReached && !isEditing)} validator={isWeightInTournamentRange} minWeight={torneo.minWeight} maxWeight={torneo.maxWeight} />
                             <div>
                                 <label className="block text-sm font-medium text-gray-400 mb-1">Marca</label>
                                 <select value={currentGalloForm.marca} onChange={e => handleBulkFormChange('marca', e.target.value)} required className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition" disabled={(isLimitReached && !isEditing)}>
@@ -565,9 +627,8 @@ const GalloFormModal: React.FC<{
                 </fieldset>
                 
                 <div className="flex justify-end pt-4 space-x-3 border-t border-gray-700 mt-4">
-                    <button type="button" onClick={onClose} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Cancelar</button>
-                    <button type="button" onClick={handleBulkSubmit} className="bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-2 px-4 rounded-lg disabled:bg-gray-400 disabled:text-gray-700 disabled:cursor-not-allowed">
-                        Guardar Todo y Cerrar
+                    <button type="button" onClick={onClose} className="bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-2 px-4 rounded-lg">
+                        Cerrar
                     </button>
                 </div>
             </div>
@@ -596,8 +657,7 @@ const GalloFormModal: React.FC<{
                 <div className="front-tabs-container flex items-center border-b border-transparent -mb-[21px] overflow-x-auto pb-2">
                     {frontsForSelectedCuerda.map((front, index) => {
                         const currentExistingCount = gallosByCuerda.get(front.id)?.length || 0;
-                        const currentStagedCount = stagedGallos[front.id]?.length || 0;
-                        const totalCount = currentExistingCount + currentStagedCount;
+                        const totalCount = currentExistingCount;
                         const limit = torneo.roostersPerTeam;
                         const tabText = limit > 0 ? `F${index + 1} (${totalCount}/${limit})` : `F${index + 1} (${totalCount})`;
                         return (

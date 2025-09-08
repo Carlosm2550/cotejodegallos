@@ -1,10 +1,13 @@
 
 
+
+
 export enum Screen {
   SETUP,
   MATCHMAKING,
   LIVE_FIGHT,
   RESULTS,
+  TOURNAMENT_RESULTS,
 }
 
 export enum TipoGallo {
@@ -22,6 +25,7 @@ export interface Cuerda {
   id: string;
   name: string;
   owner: string;
+  city?: string;
   baseCuerdaId?: string; // ID of the original Cuerda. If it's a front.
 }
 
@@ -59,6 +63,7 @@ export interface Torneo {
   roostersPerTeam: number;
   pointsForWin: number;
   pointsForDraw: number;
+  tournamentDays: number;
   exceptions: Array<{ cuerda1Id: string; cuerda2Id: string; }>;
 }
 
@@ -88,4 +93,9 @@ export interface MatchmakingResults {
         rounds: number;
         mainTournamentRoostersCount: number;
     };
+}
+
+export interface DailyResult {
+  day: number;
+  peleas: Pelea[];
 }

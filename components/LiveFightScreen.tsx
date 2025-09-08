@@ -194,9 +194,9 @@ const LiveFightScreen: React.FC<LiveFightScreenProps> = ({ peleas, onFinishFight
 
         {/* Win/Draw Buttons */}
         <div className="w-full flex flex-col sm:flex-row justify-center items-center gap-4 mt-4">
-           <button onClick={() => handleFinishFight('A')} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 text-xl rounded-lg w-full sm:w-auto transform hover:scale-105 transition-transform duration-200">Gana {currentFight.roosterA.color}</button>
+           <button onClick={() => handleFinishFight('A')} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 text-xl rounded-lg w-full sm:w-auto transform hover:scale-105 transition-transform duration-200">Gana {getCuerdaName(currentFight.roosterA.cuerdaId)}</button>
            <button onClick={() => handleFinishFight('DRAW')} className="bg-gray-500 hover:bg-gray-400 text-white font-bold py-3 px-6 text-lg rounded-lg w-full sm:w-auto">Empate</button>
-           <button onClick={() => handleFinishFight('B')} className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 text-xl rounded-lg w-full sm:w-auto transform hover:scale-105 transition-transform duration-200">Gana {currentFight.roosterB.color}</button>
+           <button onClick={() => handleFinishFight('B')} className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 text-xl rounded-lg w-full sm:w-auto transform hover:scale-105 transition-transform duration-200">Gana {getCuerdaName(currentFight.roosterB.cuerdaId)}</button>
         </div>
       </div>
 

@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Pelea, Torneo, Cuerda, CuerdaStats, Gallo } from '../types';
-import { RepeatIcon } from './Icons';
+import { Pelea, Torneo, Cuerda, CuerdaStats, Gallo, DailyResult } from '../types';
 
 
 // --- Lbs.Oz Weight Conversion Utilities ---
@@ -21,15 +20,15 @@ const formatWeightLbsOz = (totalOunces: number): string => {
 
 // --- SCREEN ---
 interface ResultsScreenProps { 
-    peleas: Pelea[]; 
+    dailyResults: DailyResult[]; 
     torneo: Torneo;
     cuerdas: Cuerda[];
-    onReset: () => void;
-    onRematch: () => void;
+    onNewTournament: () => void;
     onBack: () => void;
+    viewingDay: number;
 }
 
-const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, onReset, onRematch, onBack }) => {
+const ResultsScreen: React.FC<ResultsScreenProps> = ({ dailyResults, torneo, cuerdas, onNewTournament, onBack, viewingDay }) => {
     
     const [expandedCuerdas, setExpandedCuerdas] = useState<string[]>([]);
 
@@ -40,6 +39,11 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
                 : [...prev, cuerdaId]
         );
     };
+
+    const peleas = useMemo(() => {
+        const result = dailyResults.find(r => r.day === viewingDay);
+        return result ? result.peleas : [];
+    }, [dailyResults, viewingDay]);
 
     const stats: CuerdaStats[] = useMemo(() => {
         const statsMap: { [key: string]: Omit<CuerdaStats, 'cuerdaName' | 'cuerdaId' | 'fronts' | 'points'> } = {};
@@ -98,17 +102,13 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
     const sortedStats = useMemo(() => {
         const sortableItems = [...stats];
         sortableItems.sort((a, b) => {
-            // Regla 1: Más victorias es mejor (orden descendente).
-            if (a.wins !== b.wins) {
-                return b.wins - a.wins;
+            if (a.points !== b.points) {
+                return b.points - a.points;
             }
-
-            // Regla 2: Menos tiempo es mejor (orden ascendente).
             if (a.totalDurationSeconds !== b.totalDurationSeconds) {
                 return a.totalDurationSeconds - b.totalDurationSeconds;
             }
-            
-            return 0; // Son iguales
+            return 0;
         });
         return sortableItems;
     }, [stats]);
@@ -151,10 +151,10 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
             </div>
             
             <div className="bg-gray-800/50 rounded-2xl shadow-lg border border-gray-700 p-4 sm:p-6 print-target">
-                <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4 print-hide">
-                    <h3 className="text-xl font-bold text-amber-400">Tabla de Posiciones</h3>
-                     <button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg mt-3 sm:mt-0">
-                        Imprimir PDF
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4">
+                    <h3 className="text-xl font-bold text-amber-400">Tabla de Posiciones - Día {viewingDay}</h3>
+                     <button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg mt-3 sm:mt-0 print-hide">
+                        Imprimir PDF del Día
                     </button>
                 </div>
                 <p className="text-xs text-gray-400 mb-4 print-hide">
@@ -169,6 +169,9 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
                                 <th scope="col" className="px-6 py-3">
                                     CUERDA
                                 </th>
+                                <th scope="col" className="px-4 py-3 text-center">
+                                    PUNTOS
+                                </th>
                                 <th scope="col" className="px-3 py-3 text-center">
                                     PG
                                 </th>
@@ -180,6 +183,11 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
                             </tr>
                         </thead>
                         <tbody>
+                           {sortedStats.length === 0 && (
+                                <tr>
+                                    <td colSpan={7} className="text-center py-8 text-gray-500">No hay datos de peleas para el día seleccionado.</td>
+                                </tr>
+                            )}
                            {sortedStats.map((stat, index) => {
                                const { minutes, seconds } = formatTime(stat.totalDurationSeconds);
                                const isExpanded = expandedCuerdas.includes(stat.cuerdaId);
@@ -190,6 +198,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
                                    <tr className="border-b border-gray-700 hover:bg-gray-700/30 cursor-pointer" onClick={() => toggleCuerdaExpansion(stat.cuerdaId)}>
                                        <td className="px-4 py-3 font-bold text-center">{index + 1}</td>
                                        <td className="px-6 py-3 font-semibold text-white">{stat.cuerdaName}</td>
+                                       <td className="px-4 py-3 text-center text-white font-bold">{stat.points}</td>
                                        <td className="px-3 py-3 text-center text-green-400 font-bold">{stat.wins}</td>
                                        <td className="px-3 py-3 text-center text-yellow-400">{stat.draws}</td>
                                        <td className="px-3 py-3 text-center text-red-400">{stat.losses}</td>
@@ -198,7 +207,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
                                        </td>
                                    </tr>
                                    <tr className={`results-details-row ${isExpanded ? '' : 'hidden print:table-row'}`}>
-                                      <td colSpan={6} className="p-4 results-details-cell bg-gray-700/10">
+                                      <td colSpan={7} className="p-4 results-details-cell bg-gray-700/10">
                                         <div className="space-y-2">
                                             <h4 className="font-bold text-amber-300">Detalles de Peleas para {stat.cuerdaName}:</h4>
                                             {teamFights.length > 0 ? teamFights.map(fight => {
@@ -233,7 +242,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
             </div>
 
              <div className="bg-gray-800/50 rounded-2xl shadow-lg border border-gray-700 p-4 sm:p-6 mt-8">
-                <h3 className="text-xl font-bold text-amber-400 mb-4">Top 10 Gallos Más Rápidos</h3>
+                <h3 className="text-xl font-bold text-amber-400 mb-4">Top 10 Gallos Más Rápidos - Día {viewingDay}</h3>
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left text-gray-300">
                         <thead className="text-xs text-amber-400 uppercase bg-gray-700/50">
@@ -267,13 +276,9 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ peleas, torneo, cuerdas, 
             </div>
 
             <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8 print-hide">
-                 <button onClick={onBack} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-8 rounded-lg text-lg">Atrás</button>
-                <button onClick={onRematch} className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg text-lg flex items-center space-x-2">
-                   <RepeatIcon className="w-5 h-5"/>
-                   <span>Mismos Gallos</span>
-                </button>
-                <button onClick={onReset} className="bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-3 px-8 rounded-lg text-lg">
-                    Nuevo Torneo (Borrar Todo)
+                 <button onClick={onBack} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-8 rounded-lg text-lg">Volver a la Cartelera</button>
+                <button onClick={onNewTournament} className="bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-3 px-8 rounded-lg text-lg">
+                    Nuevo Torneo (Borrar Resultados)
                 </button>
             </div>
         </div>
